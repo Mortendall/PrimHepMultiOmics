@@ -29,4 +29,5 @@ Remotes:
     bioc::SingleCellExperiment,
     bioc::scuttle,
     bioc::pcaMethods,
-    bioc::PCAtools
+    bioc::PCAtools,
+    bioc::org.Mm.eg.db

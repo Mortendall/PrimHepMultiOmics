@@ -3,3 +3,9 @@
 .Rdata
 .httr-oauth
 .DS_Store
+data-raw/220503_liver_full-seurat_updated.rds
+data-raw/Copy of 0132_scnRNA_metadataMD.xlsx
+data-raw/count_matrix.xlsx
+data-raw/Liver_vs_prim_hep_meta.xlsx
+data-raw/metadata.xlsx
+data-raw/morten_proteome_combined_hybrid.txt
