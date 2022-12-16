@@ -2,6 +2,31 @@ Package: PrimHepMultiOmics
 Type: Project
 Version: 0.0.1
 Imports:
-    knitr,
-    rmarkdown
+    ComplexUpset,
+    ggplotify,
+    patchwork
 Encoding: UTF-8
+Suggests: 
+    openxlsx,
+    knitr,
+    lintr,
+    Matrix.utils,
+    renv,
+    rmarkdown,
+    scuttle,
+    styler,
+    targets,
+    here,
+    dplyr
+Depends: 
+    tidyverse
+Remotes: 
+    bioc::limma,
+    bioc::Seurat,
+    bioc::edgeR,
+    bioc::clusterProfiler,
+    bioc::DESeq2,
+    bioc::SingleCellExperiment,
+    bioc::scuttle,
+    bioc::pcaMethods,
+    bioc::PCAtools
