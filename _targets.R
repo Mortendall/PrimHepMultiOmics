@@ -9,9 +9,9 @@ library(targets)
 
 # Set target options:
 tar_option_set(
-  packages = c("tibble"), # packages that your targets need to run
-  format = "rds" # default storage format
-  # Set other options as needed.
+  packages = desc::desc_get_deps()$package[-1],
+  format = "rds"
+
 )
 
 # tar_make_clustermq() configuration (okay to leave alone):
@@ -26,13 +26,32 @@ tar_source()
 
 # Replace the target list below with your own:
 list(
-    tar_target(
-        name = bulkLoad,
-        command = count_matrix_assembly("count_matrix.xlsx")
-    ),
-    tar_target(
-        name = metadataLoad,
-        command = load_metadata("metadata.xlsx")
-    ),
-
+  tar_target(
+    name = bulkLoad,
+    command = count_matrix_assembly("count_matrix.xlsx")
+  ),
+  tar_target(
+    name = metadataLoad,
+    command = load_metadata("metadata.xlsx")
+  ),
+  tar_target(
+    name = filteredMetadata,
+    command = removeOutlierMeta(metadataLoad, "558L")
+  ),
+  tar_target(
+    name = filteredCounts,
+    command = removeOutlierCounts(bulkLoad, filteredMetadata, "558L")
+  ),
+  tar_target(
+    name = designMatrix,
+    command = Generate_design_matrix(filteredMetadata)
+  ),
+  tar_target(
+    name = ctrsts,
+    command = Generate_ctrst(designMatrix)
+  ),
+  tar_target(
+      name = DGETable,
+      command = DGEanalysis(filteredCounts, filteredMetadata, designMatrix, ctrsts)
+  )
 )

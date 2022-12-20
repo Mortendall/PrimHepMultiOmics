@@ -1,33 +1,34 @@
-Package: PrimHepMultiOmics
 Type: Project
+Package: PrimHepMultiOmics
 Version: 0.0.1
+Depends: 
+    tidyverse
 Imports:
     ComplexUpset,
     ggplotify,
     patchwork
-Encoding: UTF-8
 Suggests: 
-    openxlsx,
+    dplyr,
+    here,
     knitr,
     lintr,
     Matrix.utils,
+    openxlsx,
     renv,
     rmarkdown,
     scuttle,
     styler,
     targets,
-    here,
-    dplyr
-Depends: 
-    tidyverse
+    visNetwork
 Remotes: 
-    bioc::limma,
-    bioc::Seurat,
-    bioc::edgeR,
     bioc::clusterProfiler,
     bioc::DESeq2,
-    bioc::SingleCellExperiment,
-    bioc::scuttle,
+    bioc::edgeR,
+    bioc::limma,
+    bioc::org.Mm.eg.db,
     bioc::pcaMethods,
     bioc::PCAtools,
-    bioc::org.Mm.eg.db
+    bioc::scuttle,
+    bioc::Seurat,
+    bioc::SingleCellExperiment
+Encoding: UTF-8
