@@ -3,23 +3,10 @@ Package: PrimHepMultiOmics
 Version: 0.0.1
 Depends: 
     tidyverse
-Imports:
-    ComplexUpset,
-    ggplotify,
-    patchwork
 Suggests: 
-    dplyr,
-    here,
-    knitr,
-    lintr,
-    Matrix.utils,
-    openxlsx,
     renv,
-    rmarkdown,
-    scuttle,
     styler,
     targets,
-    visNetwork
 Remotes: 
     bioc::clusterProfiler,
     bioc::DESeq2,
@@ -32,3 +19,21 @@ Remotes:
     bioc::Seurat,
     bioc::SingleCellExperiment
 Encoding: UTF-8
+Imports: 
+    dplyr,
+    here,
+    knitr,
+    lintr,
+    Matrix.utils,
+    openxlsx,
+    rmarkdown,
+    scuttle,
+    visNetwork,
+    ComplexUpset,
+    data.table,
+    ggplotify,
+    patchwork,
+    statmod,
+    magrittr,
+    roxygen2,
+    wesanderson
