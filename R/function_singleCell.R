@@ -199,7 +199,7 @@ DGECountMatrix <- function(DGEObject) {
   return(rld)
 }
 
-#' Title
+#' Differential gene expression analysis on pseudocounts
 #'
 #' @param DGEObject
 #'
@@ -238,6 +238,13 @@ DGEPseudo <- function(DGEObject) {
   return(res_tbl_list)
 }
 
+#' Protein RNA correlation
+#'
+#' @param RNAdata
+#' @param proteindata
+#'
+#' @return
+
 ProteinRNACorrelation <- function(RNAdata, proteindata) {
   for (i in 1:length(proteindata)) {
     proteindata[[i]] <- proteindata[[i]] |>
@@ -259,3 +266,81 @@ ProteinRNACorrelation <- function(RNAdata, proteindata) {
   )
   return(joined_table)
 }
+
+#' Correlate proteins and genes with differential abundance and expression
+#'
+#' @param ProteinRNAComparison
+#'
+#' @return
+
+ProteinRNACorFigure <- function(ProteinRNAComparison){
+    ComparisonPlot <- ggplot2::ggplot(ProteinRNAComparison,
+                                      ggplot2::aes(x = log2FoldChange,
+                                                   y = logFC))+
+        ggplot2::geom_point(size = 2)+
+        ggplot2::theme_bw()+
+        ggplot2::xlab("Pseudobulk RNA exp. Log2FC")+
+        ggplot2::ylab("Protein Ab. Log2FC")+
+        ggplot2::ggtitle("Liver vs PH",
+                         "Protein abundance vs. RNA expression")+
+        ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5,
+                                                          size = 24),
+                       plot.subtitle = ggplot2::element_text(hjust = 0.5,
+                                                             size = 22),
+                       axis.title = ggplot2::element_text(size = 20),
+                       axis.text = ggplot2::element_text(size = 20))
+    return(ComparisonPlot)
+}
+
+#' Title
+#'
+#' @param ProtRNAComparison
+#' @param limma_data the results file from the proteomics analysis to construct the background
+#'
+#' @return
+
+GOCCRNAProt <- function(ProtRNAComparison, limma_data){
+    bg <- clusterProfiler::bitr(limma_data$L_vs_CS$Genes,
+                                fromType = "SYMBOL",
+                                toType = "ENTREZID",
+                                OrgDb = "org.Mm.eg.db"
+    )
+
+    sub_group_comparison <- list(Up_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
+                                                                log2FoldChange > 0 &
+                                                                    logFC > 0),
+                                 Down_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
+                                                                    log2FoldChange < 0 &
+                                                                        logFC < 0),
+                                 Down_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
+                                                                  log2FoldChange > 0 &
+                                                                      logFC < 0),
+                                 Up_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
+                                                                  log2FoldChange < 0 &
+                                                                      logFC > 0))
+
+    entrez_list <- lapply(sub_group_comparison, function(x) clusterProfiler::bitr(x$gene,
+                                                                                  fromType = "SYMBOL",
+                                                                                  toType = "ENTREZID",
+                                                                                  OrgDb = "org.Mm.eg.db") |>
+                              dplyr::pull(ENTREZID))
+    names(entrez_list)<- c("PH down Prot + RNA",
+                           "PH up Prot + RNA",
+                           "PH up Prot down RNA",
+                           "PH down Prot up RNA")
+    GO_results <- clusterProfiler::compareCluster(entrez_list,
+                                                  fun = clusterProfiler::enrichGO,
+                                                  keyType = "ENTREZID",
+                                                  ont = "CC",
+                                                  universe = bg$ENTREZID,
+                                                  OrgDb = "org.Mm.eg.db",
+                                                  readable = T)
+
+
+
+
+    return(GO_result)
+}
+
+
+

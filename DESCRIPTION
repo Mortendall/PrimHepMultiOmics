@@ -36,4 +36,5 @@ Imports:
     statmod,
     magrittr,
     roxygen2,
-    wesanderson
+    wesanderson,
+    pheatmap

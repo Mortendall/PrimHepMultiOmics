@@ -157,7 +157,22 @@ list(
     name = ProtRNACor,
     command = ProteinRNACorrelation(
       PseudoDEG,
-      DAPResults
-    )
+      DAPResults)
+  ),
+    tar_target(
+        name = CorrelationFigure,
+        command = ProteinRNACorFigure(
+            ProtRNACor)
+  ),
+  tar_target(
+      name = CorrelationGOCC,
+      command = GOCCRNAProt(ProtRNACor,
+                            DAPResults)
+  ),
+  tar_target(
+      name = CorrelationGOCCFigure,
+      command = enrichplot::dotplot(CorrelationGOCC,
+                                    by = "count",
+                                    showCategory = 5)
   )
 )

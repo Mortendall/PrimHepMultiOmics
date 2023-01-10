@@ -245,7 +245,13 @@ UpsetProteomics <- function(limma_data) {
     ))
   )
   # ggplotify to use the object in patchwork
-  upsetProt <- ggplotify::as.ggplot(upsetProt)
+  upsetProt <- ggplotify::as.ggplot(upsetProt)+
+      ggplot2::ggtitle("Upset plot - Proteomics")+
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
 
   return(upsetProt)
 }
+
+
+
+
