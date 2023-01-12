@@ -8,7 +8,6 @@ library(targets)
 library(tidyverse)
 library(Seurat)
 # library(tarchetypes) # Load other packages as needed. # nolint
-
 # Set target options:
 tar_option_set(
   packages = desc::desc_get_deps()$package[-1],

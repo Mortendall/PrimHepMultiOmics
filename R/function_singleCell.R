@@ -401,7 +401,7 @@ UpsetplotGenerationPseudo <- function(dgeResults_annotated) {
     }
 
 
-    names(sig_genes) <- c("Liver vs CS", "Liver vs PH", "CS vs PH")
+    names(sig_genes) <- c("Liver vs PH", "Liver vs CS", "CS vs PH")
 
 
     # make same upsetplot with ComplexUpset
