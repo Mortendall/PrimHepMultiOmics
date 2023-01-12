@@ -449,3 +449,50 @@ UpsetplotGenerationPseudo <- function(dgeResults_annotated) {
     return(upsetRNA)
 }
 
+#' GO analysis for cellular component, split by up- and down-regulated genes
+#'
+#' @param dgeResults_annotated
+#'
+#' @return
+
+GOCCSplitPseudo <- function(dgeResults_annotated) {
+    L_vs_PH <- PrepareComparison(
+        dgeResults_annotated[[1]],
+        c("Upregulated in L vs PH", "Upregulated in PH vs L")
+    )
+    L_vs_CS <- PrepareComparison(
+        dgeResults_annotated[[2]],
+        c("Upregulated in L vs CS", "Upregulated in CS vs L")
+    )
+    PH_vs_CS <- PrepareComparison(
+        dgeResults_annotated[[3]],
+        c("Upregulated in CS vs PH", "Upregulated in PH vs CS")
+    )
+    All_comparisons <- c(L_vs_CS, L_vs_PH, PH_vs_CS)
+
+    bg <- dgeResults_annotated[[1]]
+    if ("Genes" %in% colnames(bg)) {
+        bg <- bg |>
+            dplyr::rename(SYMBOL = Genes)
+    }
+    else if ("gene" %in% colnames(bg)){
+        bg <- bg |>
+            dplyr::rename(SYMBOL = gene)
+    }
+    bg <- clusterProfiler::bitr(
+        bg$SYMBOL,
+        fromType = "SYMBOL",
+        toType = "ENTREZID",
+        OrgDb = "org.Mm.eg.db",
+        drop = T
+    )
+    clusterCompare_All <- clusterProfiler::compareCluster(
+        gene = All_comparisons,
+        fun = "enrichGO",
+        universe = bg$ENTREZID,
+        key = "ENTREZID",
+        OrgDb = "org.Mm.eg.db",
+        ont = "CC"
+    )
+    return(clusterCompare_All)
+}

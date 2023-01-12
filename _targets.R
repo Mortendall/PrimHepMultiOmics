@@ -181,7 +181,7 @@ list(
   ),
   tar_target(
       name = GOCCPseudo,
-      command = GOCCSplit(PseudoDEG)
+      command = GOCCSplitPseudo(PseudoDEG)
   ),
   tar_target(
       name = dotplotPseudo,
