@@ -77,7 +77,8 @@ list(
   ),
   tar_target(
     name = CCDotplot,
-    command = DotplotCC(GOCC)
+    command = DotplotCC(GOCC,
+                        "GSE analysis - upregulated and Downregulated")
   ),
   tar_target(
     name = UpsetplotGO,
@@ -123,7 +124,8 @@ list(
   ),
   tar_target(
     name = DotplotCCProteomics,
-    command = DotplotCC(GOCCProteomics)
+    command = DotplotCC(GOCCProteomics,
+                        "GSE analysis - upregulated and Downregulated")
   ),
   tar_target(
     name = UpsetplotGOProteomics,
@@ -171,8 +173,24 @@ list(
   ),
   tar_target(
       name = CorrelationGOCCFigure,
-      command = enrichplot::dotplot(CorrelationGOCC,
-                                    by = "count",
-                                    showCategory = 5)
+      command = DotplotCC(CorrelationGOCC,
+                          "GSE analysis - L vs PH")
+  ),
+  tar_target(
+      name = PseudoMDS,
+      command = MDSPseudoPlot(PseudoCounts)
+  ),
+  tar_target(
+      name = GOCCPseudo,
+      command = GOCCSplit(PseudoDEG)
+  ),
+  tar_target(
+      name = dotplotPseudo,
+      command = DotplotCC(GOCCPseudo,
+                          "GSE analysis - upregulated and Downregulated")
+  ),
+  tar_target(
+      name = UpsetPseudo,
+      command = UpsetplotGenerationPseudo(PseudoDEG)
   )
 )

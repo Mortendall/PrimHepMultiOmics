@@ -319,10 +319,11 @@ GOCCRNAProt <- function(ProtRNAComparison, limma_data){
                                                                   log2FoldChange < 0 &
                                                                       logFC > 0))
 
-    entrez_list <- lapply(sub_group_comparison, function(x) clusterProfiler::bitr(x$gene,
-                                                                                  fromType = "SYMBOL",
-                                                                                  toType = "ENTREZID",
-                                                                                  OrgDb = "org.Mm.eg.db") |>
+    entrez_list <- lapply(sub_group_comparison,
+                          function(x) clusterProfiler::bitr(x$gene,
+                                                            fromType = "SYMBOL",
+                                                            toType = "ENTREZID",
+                                                            OrgDb = "org.Mm.eg.db") |>
                               dplyr::pull(ENTREZID))
     names(entrez_list)<- c("PH down Prot + RNA",
                            "PH up Prot + RNA",
@@ -335,12 +336,116 @@ GOCCRNAProt <- function(ProtRNAComparison, limma_data){
                                                   universe = bg$ENTREZID,
                                                   OrgDb = "org.Mm.eg.db",
                                                   readable = T)
-
-
-
-
-    return(GO_result)
+    return(GO_results)
 }
 
+#' Plot MDS plot for dim1 and dim2 from DESeqDataset
+#'
+#' @param DESEQ2Object
+#'
+#' @return
 
+MDSPseudoPlot <- function(DESEQCounts){
+    mdsData <- limma::plotMDS(DESEQCounts@assays@data@listData[[1]],
+                              plot = FALSE)
+    varianceExplained <- mdsData$var.explained
+    mdsData <-
+        mdsData$eigen.vectors |>
+        as.data.frame() |>
+        dplyr::mutate(ID = DESEQCounts$hash.mcl.ID)  |>
+        dplyr::mutate(Group = DESEQCounts$group)  |>
+        dplyr::select(ID, Group, V1, V2, V3) |>
+        dplyr::rename(dim1 = V1,
+                      dim2 =  V2,
+                      dim3 = V3)
+
+    pBase <-
+        ggplot2::ggplot(mdsData, ggplot2::aes(x = dim1, y = dim2, colour = Group)) +
+        ggplot2::geom_point(size = 10) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(
+            axis.title.x = ggplot2::element_text(size = 18),
+            axis.title.y = ggplot2::element_text(size = 18),
+            legend.text = ggplot2::element_text(size = 18),
+            plot.title = ggplot2::element_text(size = 22, hjust = 0.5)
+        ) +
+        ggplot2::ggtitle("MDS Plot") +
+        ggplot2::xlab(paste("Dim1 (", round(100 * varianceExplained[1], 2), " %)", sep = "")) +
+        ggplot2::ylab(paste("Dim2 (", round(100 * varianceExplained[2], 2), " %)", sep = ""))
+    return(pBase)
+}
+
+#' Generate upset plot with colors from DESEQ objects
+#'
+#' @param dgeResults_annotated
+#'
+#' @return An upset plot
+
+UpsetplotGenerationPseudo <- function(dgeResults_annotated) {
+    sig_genes_names <- names(dgeResults_annotated)
+    sig_genes <- vector(mode = "list", length = 3)
+    names(sig_genes) <- names(dgeResults_annotated)
+    for (i in 1:3) {
+        sig_genes[[i]] <- dgeResults_annotated[[i]]
+        sig_genes[[i]] <- sig_genes[[i]] %>%
+            dplyr::filter(padj < 0.05) |>
+            dplyr::mutate(
+                Direction =
+                    dplyr::case_when(
+                        log2FoldChange > 0 ~ "Up",
+                        log2FoldChange < 0 ~ "Down"
+                    )
+            )
+        sig_genes[[i]] <- sig_genes[[i]] |>
+            dplyr::select(gene, Direction)
+    }
+
+
+    names(sig_genes) <- c("Liver vs CS", "Liver vs PH", "CS vs PH")
+
+
+    # make same upsetplot with ComplexUpset
+    order_upset <- c("Liver vs CS", "Liver vs PH", "CS vs PH")
+    upset_data <- data.frame(
+        "Genes" = sig_genes[[1]]$gene,
+        "Group" = names(sig_genes[1]),
+        "Direction" = sig_genes[[1]]$Direction
+    )
+
+    for (i in 2:length(sig_genes)) {
+        upset_data <- dplyr::add_row(upset_data,
+                                     "Genes" = sig_genes[[i]]$gene,
+                                     "Group" = names(sig_genes)[i],
+                                     "Direction" = sig_genes[[i]]$Direction
+        )
+    }
+    upset_data <- dplyr::distinct(upset_data)
+    upset_data <- upset_data |>
+        dplyr::mutate("TRUE" = TRUE)
+    upset_wide <- tidyr::pivot_wider(upset_data,
+                                     names_from = Group,
+                                     values_from = "TRUE",
+                                     values_fill = FALSE) |>
+        dplyr::filter(!is.na(Genes))
+
+    upsetRNA <- ComplexUpset::upset(upset_wide,
+                                    order_upset,
+                                    name = "",
+                                    sort_sets = F,
+                                    themes = ComplexUpset::upset_modify_themes(list(
+                                        "intersections_matrix" = ggplot2::theme(text = ggplot2::element_text(size = 16))
+                                    ))
+    )
+    # ggplotify to use the object in patchwork
+    upsetRNA <- ggplotify::as.ggplot(upsetRNA)
+    upsetRNA <- upsetRNA +
+        # ggplot2::ggtitle("Upsetplot") +
+        ggplot2::theme(plot.title = ggplot2::element_text(
+            size = 18,
+            hjust = 0.5,
+            vjust = 0.95
+        ))
+    upsetRNA <- ggplotify::as.ggplot(upsetRNA)
+    return(upsetRNA)
+}
 

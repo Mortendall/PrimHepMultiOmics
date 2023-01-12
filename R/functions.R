@@ -328,7 +328,7 @@ PrepareComparison <- function(dgeResults_annotated, Groupnames) {
       dplyr::filter(logFC < 0) |>
       dplyr::filter(FDR < 0.05) |>
       dplyr::select(SYMBOL)
-  } else {
+  } else if ("adj.P.Val" %in% colnames(dgeResults_annotated)) {
     dataList[[1]] <- dgeResults_annotated |>
       dplyr::filter(logFC > 0) |>
       dplyr::filter(adj.P.Val < 0.05) |>
@@ -339,6 +339,17 @@ PrepareComparison <- function(dgeResults_annotated, Groupnames) {
       dplyr::filter(adj.P.Val < 0.05) |>
       dplyr::mutate(SYMBOL = Genes) |>
       dplyr::select(SYMBOL)
+  } else if ("padj" %in% colnames(dgeResults_annotated)) {
+      dataList[[1]] <- dgeResults_annotated |>
+          dplyr::filter(log2FoldChange > 0) |>
+          dplyr::filter(padj < 0.05) |>
+          dplyr::mutate(SYMBOL = gene) |>
+          dplyr::select(SYMBOL)
+      dataList[[2]] <- dgeResults_annotated |>
+          dplyr::filter(log2FoldChange < 0) |>
+          dplyr::filter(padj < 0.05) |>
+          dplyr::mutate(SYMBOL = gene) |>
+          dplyr::select(SYMBOL)
   }
 
   names(dataList) <- Groupnames
@@ -353,6 +364,7 @@ PrepareComparison <- function(dgeResults_annotated, Groupnames) {
     purrr::map(~ .$ENTREZID)
   return(dataList)
 }
+
 
 #' GO analysis for cellular component, split by up- and down-regulated genes
 #'
@@ -380,6 +392,10 @@ GOCCSplit <- function(dgeResults_annotated) {
     bg <- bg |>
       dplyr::rename(SYMBOL = Genes)
   }
+  else if ("gene" %in% colnames(bg)){
+      bg <- bg |>
+          dplyr::rename(SYMBOL = gene)
+  }
   bg <- clusterProfiler::bitr(
     bg$SYMBOL,
     fromType = "SYMBOL",
@@ -404,15 +420,17 @@ GOCCSplit <- function(dgeResults_annotated) {
 #'
 #' @return
 
-DotplotCC <- function(clusterCompare_All) {
-  CompareClusterFigure_All <- clusterProfiler::dotplot(clusterCompare_All) +
+DotplotCC <- function(clusterCompare_All, title) {
+  CompareClusterFigure_All <- clusterProfiler::dotplot(clusterCompare_All,
+                                                       by = "count",
+                                                       showCategory = 5) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(
       angle = 30,
       vjust = 1,
       hjust = 1
     )) +
     ggplot2::xlab("") +
-    ggplot2::ggtitle("GSE analysis - upregulated and Downregulated")
+    ggplot2::ggtitle(title)
   return(CompareClusterFigure_All)
 }
 
