@@ -109,7 +109,7 @@ Pseudobulk <- function(seuratObject) {
     assays = list(counts = counts),
     colData = metadata
   )
-  groups <- colData(sce)[, c("Group", "hash.mcl.ID")]
+  groups <- SummarizedExperiment::colData(sce)[, c("Group", "hash.mcl.ID")]
   # named vector of cluster id
 
   kids <- purrr::set_names(levels(sce$Group))
@@ -128,11 +128,11 @@ Pseudobulk <- function(seuratObject) {
   m <- match(sids, sce$hash.mcl.ID)
 
   ## Create the sample level metadata by combining the reordered metadata with the number of cells corresponding to each sample.
-  ei <- data.frame(colData(sce)[m, ],
+  ei <- data.frame(SummarizedExperiment::colData(sce)[m, ],
     n_cells,
     row.names = NULL
   ) |>
-    select(-celltype, -seurat_clusters)
+    dplyr::select(-celltype, -seurat_clusters)
 
   # perform QC for sanity
   sce <- scuttle::addPerCellQC(sce)
@@ -140,13 +140,13 @@ Pseudobulk <- function(seuratObject) {
   sce$is_outlier <- scuttle::isOutlier(metric = sce$total, nmads = 2, type = "both", log = T)
   sce <- sce[, !sce$is_outlier]
   # remove genes with fewer than 10 counts
-  sce <- sce[rowSums(counts(sce) > 1) >= 10]
+  sce <- sce[rowSums(SingleCellExperiment::counts(sce) > 1) >= 10]
 
   # aggregate counts pr hash.id and cluster id
 
-  groups <- colData(sce)[, c("Group", "hash.mcl.ID")]
+  groups <- SummarizedExperiment::colData(sce)[, c("Group", "hash.mcl.ID")]
 
-  pb <- Matrix.utils::aggregate.Matrix(t(SingleCellExperiment::counts(sce)),
+  pb <- Matrix.utils::aggregate.Matrix(t(counts(sce)),
     groupings = groups,
     fun = "sum"
   )
@@ -455,7 +455,7 @@ UpsetplotGenerationPseudo <- function(dgeResults_annotated) {
 #'
 #' @return
 
-GOCCSplitPseudo <- function(dgeResults_annotated) {
+GOCCSplitPseudo <- function(dgeResults_annotated, database) {
     L_vs_PH <- PrepareComparison(
         dgeResults_annotated[[1]],
         c("Upregulated in L vs PH", "Upregulated in PH vs L")
@@ -492,7 +492,56 @@ GOCCSplitPseudo <- function(dgeResults_annotated) {
         universe = bg$ENTREZID,
         key = "ENTREZID",
         OrgDb = "org.Mm.eg.db",
-        ont = "CC"
+        ont = database
     )
     return(clusterCompare_All)
 }
+
+
+#' Title
+#'
+#' @param ProtRNAComparison
+#' @param limma_data the results file from the proteomics analysis to construct the background
+#'
+#' @return
+
+GOCCRNAProtCS <- function(ProtRNAComparison, limma_data){
+    bg <- clusterProfiler::bitr(limma_data$L_vs_CS$Genes,
+                                fromType = "SYMBOL",
+                                toType = "ENTREZID",
+                                OrgDb = "org.Mm.eg.db"
+    )
+
+    sub_group_comparison <- list(Up_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
+                                                                log2FoldChange > 0 &
+                                                                    logFC > 0),
+                                 Down_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
+                                                                    log2FoldChange < 0 &
+                                                                        logFC < 0),
+                                 Down_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
+                                                                  log2FoldChange > 0 &
+                                                                      logFC < 0),
+                                 Up_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
+                                                                  log2FoldChange < 0 &
+                                                                      logFC > 0))
+
+    entrez_list <- lapply(sub_group_comparison,
+                          function(x) clusterProfiler::bitr(x$gene,
+                                                            fromType = "SYMBOL",
+                                                            toType = "ENTREZID",
+                                                            OrgDb = "org.Mm.eg.db") |>
+                              dplyr::pull(ENTREZID))
+    names(entrez_list)<- c("CS down Prot + RNA",
+                           "CS up Prot + RNA",
+                           "CS up Prot down RNA",
+                           "CS down Prot up RNA")
+    GO_results <- clusterProfiler::compareCluster(entrez_list,
+                                                  fun = clusterProfiler::enrichGO,
+                                                  keyType = "ENTREZID",
+                                                  ont = "CC",
+                                                  universe = bg$ENTREZID,
+                                                  OrgDb = "org.Mm.eg.db",
+                                                  readable = T)
+    return(GO_results)
+}
+

@@ -5,9 +5,10 @@ Depends:
     tidyverse
 Suggests: 
     renv,
+    staplr,
     styler,
-    targets,
-Remotes: 
+    targets
+Remotes:  
     bioc::clusterProfiler,
     bioc::DESeq2,
     bioc::edgeR,
@@ -17,7 +18,9 @@ Remotes:
     bioc::PCAtools,
     bioc::scuttle,
     bioc::Seurat,
-    bioc::SingleCellExperiment
+    bioc::SingleCellExperiment,
+    bioc::ggtreeExtra,
+    RobinHankin/Brobdingnag
 Encoding: UTF-8
 Imports: 
     dplyr,
@@ -37,4 +40,5 @@ Imports:
     magrittr,
     roxygen2,
     wesanderson,
-    pheatmap
+    pheatmap,
+    Brobdingnag (>= 1.2.9)

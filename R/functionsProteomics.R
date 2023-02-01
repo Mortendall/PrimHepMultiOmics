@@ -201,6 +201,12 @@ ProteomicsMDS <- function(normalized_proteomics_res, setup) {
 ##### GO analysis####
 # GO analysis function is present in the functions.r script
 
+#' Title
+#'
+#' @param limma_data
+#'
+#' @return
+
 UpsetProteomics <- function(limma_data) {
   for (i in 1:length(limma_data)) {
     limma_data[[i]] <- limma_data[[i]] |>

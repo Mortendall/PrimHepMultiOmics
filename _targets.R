@@ -7,6 +7,7 @@
 library(targets)
 library(tidyverse)
 library(Seurat)
+library(SummarizedExperiment)
 # library(tarchetypes) # Load other packages as needed. # nolint
 # Set target options:
 tar_option_set(
@@ -181,7 +182,7 @@ list(
   ),
   tar_target(
       name = GOCCPseudo,
-      command = GOCCSplitPseudo(PseudoDEG)
+      command = GOCCSplitPseudo(PseudoDEG, "CC")
   ),
   tar_target(
       name = dotplotPseudo,
