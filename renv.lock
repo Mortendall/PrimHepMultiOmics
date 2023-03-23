@@ -103,6 +103,22 @@
         "crayon"
       ]
     },
+    "Brobdingnag": {
+      "Package": "Brobdingnag",
+      "Version": "1.2-9",
+      "Source": "GitHub",
+      "Repository": "CRAN",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "RobinHankin",
+      "RemoteRepo": "Brobdingnag",
+      "RemoteRef": "master",
+      "RemoteSha": "6f40de61cc82de32aab1fae391596ca4f8d1c82e",
+      "Hash": "57d548cbd6e10c666035a3e43c3893d7",
+      "Requirements": [
+        "Matrix"
+      ]
+    },
     "ComplexUpset": {
       "Package": "ComplexUpset",
       "Version": "1.3.3",

@@ -4,11 +4,11 @@ Version: 0.0.1
 Depends: 
     tidyverse
 Suggests: 
+    qpdf,
     renv,
-    staplr,
     styler,
     targets
-Remotes:  
+Remotes: 
     bioc::clusterProfiler,
     bioc::DESeq2,
     bioc::edgeR,
