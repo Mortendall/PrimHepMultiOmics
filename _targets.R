@@ -78,11 +78,15 @@ list(
   tar_target(
     name = CCDotplot,
     command = DotplotCC(GOCC,
-                        "GSE analysis - upregulated and Downregulated")
+                        "GSE analysis - Upregulated and Downregulated\n RNAseq analysis")
   ),
   tar_target(
     name = UpsetplotGO,
     command = UpsetGO(GOCC)
+  ),
+  tar_target(
+      name = HeatmapMitoRNA,
+      command= RNAHeatmap(GOCC,46,DGElist,filteredMetadata)
   ),
   tar_target(
     name = RawProteomics,
@@ -140,6 +144,14 @@ list(
     command = UpsetProteomics(DAPResults)
   ),
   tar_target(
+    name = HeatmapProteome,
+    command = proteomicsHeatmap(GOCCProteomics,
+                                targetrow = 173,
+                                counts = NormalizedMatrix,
+                                ProteomicsSetup,
+                                2)
+  ),
+  tar_target(
     name = seuratObject,
     command = loadSingleCell("220503_liver_full-seurat_updated.rds")
   ),
@@ -161,15 +173,17 @@ list(
       PseudoDEG,
       DAPResults)
   ),
-    tar_target(
-        name = CorrelationFigure,
-        command = ProteinRNACorFigure(
-            ProtRNACor)
-  ),
   tar_target(
       name = CorrelationGOCC,
       command = GOCCRNAProt(ProtRNACor,
                             DAPResults)
+  ),
+  tar_target(
+        name = CorrelationFigure,
+        command = ProteinRNACorFigure(
+            ProtRNACor,
+            CorrelationGOCC
+            )
   ),
   tar_target(
       name = CorrelationGOCCFigure,
@@ -191,6 +205,6 @@ list(
   ),
   tar_target(
       name = UpsetPseudo,
-      command = UpsetplotGenerationPseudo(PseudoDEG)
+      command = UpsetplotGenerationPseudo(PseudoDEG,"Upset plot - Pseudobulk")
   )
 )

@@ -273,10 +273,35 @@ ProteinRNACorrelation <- function(RNAdata, proteindata) {
 #'
 #' @return
 
-ProteinRNACorFigure <- function(ProteinRNAComparison){
+ProteinRNACorFigure <- function(ProteinRNAComparison, GOobject){
+
+    mitogenes <- genelistgenerator(GOobject,
+                                   77)
+    ECMgenes <- genelistgenerator(GOobject,
+                                  2)
+    Ribosome <- genelistgenerator(GOobject,
+                                  25)
+
+    ProteinRNAComparison <- ProteinRNAComparison |>
+        dplyr::mutate(GOaffiliation = dplyr::case_when(
+            magrittr::is_in(gene, mitogenes)==T~ "Mitochondrial inner membrane",
+            magrittr::is_in(gene, ECMgenes)==T~ "Extracellular region",
+            magrittr::is_in(gene, Ribosome)==T~ "Ribonucleoprotein complex",
+            TRUE ~ "Other"
+        )
+        ) |>
+        dplyr::arrange(GOaffiliation = factor(GOaffiliation,
+                                             levels = c("Other",
+                                                        "Mitochondrial inner membrane",
+                                                        "Extracellular region",
+                                                        "Ribonucleoprotein complex")
+                                             )
+                      )
+
     ComparisonPlot <- ggplot2::ggplot(ProteinRNAComparison,
                                       ggplot2::aes(x = log2FoldChange,
-                                                   y = logFC))+
+                                                   y = logFC,
+                                                   color = GOaffiliation))+
         ggplot2::geom_point(size = 2)+
         ggplot2::theme_bw()+
         ggplot2::xlab("Pseudobulk RNA exp. Log2FC")+
@@ -288,8 +313,34 @@ ProteinRNACorFigure <- function(ProteinRNAComparison){
                        plot.subtitle = ggplot2::element_text(hjust = 0.5,
                                                              size = 22),
                        axis.title = ggplot2::element_text(size = 20),
-                       axis.text = ggplot2::element_text(size = 20))
+                       axis.text = ggplot2::element_text(size = 20))+
+        ggplot2::scale_color_manual(values = wesanderson::wes_palette("Moonrise2",4))
+
     return(ComparisonPlot)
+}
+
+#' A helper function to extract gene names from an enrichResult object
+#'
+#' @param GOObject
+#' @param targetrow
+#'
+#' @return
+
+genelistgenerator <- function(GOobject, targetrow){
+    if(class(GOobject)=="compareClusterResult"){
+        gene_list <- GOobject@compareClusterResult$geneID[targetrow]
+        heatmapname <- GOobject@compareClusterResult$Description[targetrow]
+    }
+    else if(class(GOobject)=="enrichResult"){
+        gene_list <- GOobject@result$geneID[targetrow]
+        heatmapname <- GOobject@result$Description[targetrow]
+    }
+    else{
+        print("No GO object detected")
+        return()
+    }
+    gene_list<-unlist(stringr::str_split(gene_list, "/"))
+    return(gene_list)
 }
 
 #' Title
@@ -369,7 +420,7 @@ MDSPseudoPlot <- function(DESEQCounts){
             legend.text = ggplot2::element_text(size = 18),
             plot.title = ggplot2::element_text(size = 22, hjust = 0.5)
         ) +
-        ggplot2::ggtitle("MDS Plot") +
+        ggplot2::ggtitle("MDS Plot - Pseudobulk") +
         ggplot2::xlab(paste("Dim1 (", round(100 * varianceExplained[1], 2), " %)", sep = "")) +
         ggplot2::ylab(paste("Dim2 (", round(100 * varianceExplained[2], 2), " %)", sep = ""))
     return(pBase)
@@ -381,7 +432,7 @@ MDSPseudoPlot <- function(DESEQCounts){
 #'
 #' @return An upset plot
 
-UpsetplotGenerationPseudo <- function(dgeResults_annotated) {
+UpsetplotGenerationPseudo <- function(dgeResults_annotated, plottitle) {
     sig_genes_names <- names(dgeResults_annotated)
     sig_genes <- vector(mode = "list", length = 3)
     names(sig_genes) <- names(dgeResults_annotated)
@@ -445,7 +496,10 @@ UpsetplotGenerationPseudo <- function(dgeResults_annotated) {
             hjust = 0.5,
             vjust = 0.95
         ))
-    upsetRNA <- ggplotify::as.ggplot(upsetRNA)
+    upsetRNA <- ggplotify::as.ggplot(upsetRNA)+
+        ggplot2::ggtitle(plottitle)+
+        ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                          hjust = 0.5))
     return(upsetRNA)
 }
 

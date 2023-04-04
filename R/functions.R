@@ -170,7 +170,6 @@ MDSanalysis <- function(RNAseq, metadata) {
     dplyr::mutate(Group = metadata$Group) %>%
     dplyr::select(ID, Group, V1, V2, V3)
 
-
   setnames(
     mdsData,
     c("V1", "V2", "V3", "ID", "Group"),
@@ -187,7 +186,7 @@ MDSanalysis <- function(RNAseq, metadata) {
       legend.text = ggplot2::element_text(size = 18),
       plot.title = ggplot2::element_text(size = 22, hjust = 0.5)
     ) +
-    ggplot2::ggtitle("MDS Plot") +
+    ggplot2::ggtitle("MDS Plot - RNAseq analysis") +
     ggplot2::xlab(paste("Dim1 (", round(100 * varianceExplained[1], 2), " %)", sep = "")) +
     ggplot2::ylab(paste("Dim2 (", round(100 * varianceExplained[2], 2), " %)", sep = ""))
   return(pBase)
@@ -240,7 +239,10 @@ UpsetplotGeneration <- function(dgeResults_annotated) {
   upset_data <- dplyr::distinct(upset_data)
   upset_data <- upset_data |>
     dplyr::mutate("TRUE" = TRUE)
-  upset_wide <- tidyr::pivot_wider(upset_data, names_from = Group, values_from = "TRUE", values_fill = FALSE) |>
+  upset_wide <- tidyr::pivot_wider(upset_data,
+                                   names_from = Group,
+                                   values_from = "TRUE",
+                                   values_fill = FALSE) |>
     dplyr::filter(!is.na(Genes))
 
 
@@ -257,9 +259,9 @@ UpsetplotGeneration <- function(dgeResults_annotated) {
   # ggplotify to use the object in patchwork
   upsetRNA <- ggplotify::as.ggplot(upsetRNA)
   upsetRNA <- upsetRNA +
-    # ggplot2::ggtitle("Upsetplot") +
+     ggplot2::ggtitle("No. of differentially expressed genes between groups") +
     ggplot2::theme(plot.title = ggplot2::element_text(
-      size = 18,
+      size = 24,
       hjust = 0.5,
       vjust = 0.95
     ))
@@ -409,7 +411,8 @@ GOCCSplit <- function(dgeResults_annotated) {
     universe = bg$ENTREZID,
     key = "ENTREZID",
     OrgDb = "org.Mm.eg.db",
-    ont = "CC"
+    ont = "CC",
+    readable = T
   )
   return(clusterCompare_All)
 }
@@ -428,7 +431,9 @@ DotplotCC <- function(clusterCompare_All, title) {
       angle = 30,
       vjust = 1,
       hjust = 1
-    )) +
+    ),
+    plot.title = ggplot2::element_text(size = 24,
+                                       hjust = 0.5)) +
     ggplot2::xlab("") +
     ggplot2::ggtitle(title)
   return(CompareClusterFigure_All)
@@ -457,9 +462,9 @@ UpsetGO <- function(clusterCompare_All) {
   # ggplotify to use the object in patchwork
   upsetGO <- ggplotify::as.ggplot(upsetGO)
   upsetGO <- upsetGO +
-    # ggplot2::ggtitle("Upsetplot") +
+    ggplot2::ggtitle("No. of GO terms from the \'cellular component\' ontology") +
     ggplot2::theme(plot.title = ggplot2::element_text(
-      size = 18,
+      size = 24,
       hjust = 0.5,
       vjust = 0.95
     ))
@@ -512,4 +517,105 @@ CPMPlotsProteomics <- function(normalized_proteomics_res) {
 
   cpm_figs <- cpm1 + cpm2
   return(cpm_figs)
+}
+
+
+#' Title
+#'
+#' @param GOobject
+#' @param targetrow
+#' @param DGElist
+#' @param setup
+#'
+#' @return
+
+RNAHeatmap <- function(GOobject,targetrow, DGElist, setup){
+    #prepare setup file
+    setup <-setup |>
+            dplyr::arrange(Group = base::factor(Group, c("L", "CS", "PH")))
+        #prepare CPM matrix from DEG list
+        counts <- edgeR::cpm(DGElist,log = T)
+        counts <- counts |>
+            as.data.frame() |>
+            dplyr::select(setup$Sample) |>
+            dplyr::arrange(dplyr::desc(rowSums(counts)))
+        counts <- counts |>
+            dplyr::mutate(ENSEMBL = rownames(counts))
+
+        #generate SYMBOL IDs for count matrix
+        keyID<- clusterProfiler::bitr(counts$ENSEMBL,
+                                    fromType = "ENSEMBL",
+                                    toType = "SYMBOL",
+                                    OrgDb = "org.Mm.eg.db",
+                                    drop = T)
+        keyID <- keyID |>
+            dplyr::distinct(ENSEMBL, .keep_all = T)
+
+        counts <- dplyr::left_join(counts,keyID, by = c("ENSEMBL"="ENSEMBL"))
+
+        #Generate Gene list
+        if(class(GOobject)=="compareClusterResult"){
+            gene_list <- GOobject@compareClusterResult$geneID[targetrow]
+            heatmapname <- GOobject@compareClusterResult$Description[targetrow]
+        }
+        else if(class(GOobject)=="enrichResult"){
+            gene_list <- GOobject@result$geneID[targetrow]
+            heatmapname <- GOobject@result$Description[targetrow]
+        }
+        else{
+            print("No GO object detected")
+        }
+
+        gene_list <- unlist(stringr::str_split(gene_list, "/"))
+
+        #Select Candidates in Gene List
+        trimmed_cpm <- counts|>
+            dplyr::select(-ENSEMBL) |>
+            dplyr::filter(SYMBOL %in% gene_list) |>
+            dplyr::distinct(SYMBOL, .keep_all = T) |>
+            dplyr::arrange(SYMBOL)
+        trimmed_cpm <- trimmed_cpm |>
+            dplyr::filter(!is.na(SYMBOL))
+        rownames(trimmed_cpm)<-trimmed_cpm$SYMBOL
+        trimmed_cpm <- trimmed_cpm |>
+            dplyr::select(-SYMBOL)
+
+        #create annotation key for heatmap
+        key <- as.data.frame(setup)
+        key <- key |>
+            dplyr::select(Group)
+        rownames(key) <- setup$Sample
+        key$Group <- factor(key$Group, c("L", "CS", "PH"))
+
+        #create heatmap
+        Heatmap_title <- grid::textGrob(heatmapname,
+                                        gp = gpar(fontsize = 24,
+                                                  fontface = "bold"))
+        Heatmap <- pheatmap::pheatmap(trimmed_cpm,
+                                      treeheight_col = 0,
+                                      treeheight_row = 0,
+                                      scale = "row",
+                                      legend = T,
+                                      na_col = "white",
+                                      Colv = NA,
+                                      na.rm = T,
+                                      cluster_cols = F,
+                                      fontsize_row = 5,
+                                      fontsize_col = 8,
+                                      cellwidth = 20,
+                                      cellheight = 1.5,
+                                      annotation_col = key,
+                                      show_colnames = F,
+                                      show_rownames = F,
+                                      cluster_rows = T
+        )
+        Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
+                                                        Heatmap[[4]]),
+                                           heights = c(0.1, 1))
+        Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+        Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+        return(Heatmap)
+
+
+
 }

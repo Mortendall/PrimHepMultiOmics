@@ -8,6 +8,7 @@ library(tidyverse)
 library(Seurat)
 library(SummarizedExperiment)
 source("~/R/tmp/PrimHepMultiOmics/R/functions.R")
+source("~/R/tmp/PrimHepMultiOmics/R/functionsProteomics.R")
 source("~/R/tmp/PrimHepMultiOmics/R/function_singleCell.R")
 options(ggrepel.max.overlaps = Inf)
 
@@ -32,10 +33,13 @@ marker_genes <- c("Alb",
 
 DotplotFigure <- Seurat::DotPlot(SingleCellData,
                                  features = marker_genes)+
+    ggplot2::ggtitle("Marker Genes for Cell Populations")+
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
                                                        vjust = 0.8,
                                                        size = 18),
-                   axis.text.y = ggplot2::element_text(size = 18))
+                   axis.text.y = ggplot2::element_text(size = 18),
+                   plot.title = ggplot2::element_text(hjust = 0.5,
+                                                      size = 24))
 
 
 #####UMAP plot for group####
@@ -148,9 +152,9 @@ patchworktest4 <- DimPlotGroup+
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-    # grDevices::pdf(here::here("data/Figure4.pdf"), height = 20, width = 20)
-    #  patchworktest4
-    #  dev.off()
+     # grDevices::pdf(here::here("data/Figure4.pdf"), height = 20, width = 20)
+     #  patchworktest4
+     #  dev.off()
 
 #####Hepatocyte Subset####
 #Subset data to only include hepatocytes and cultured hepatocytes
@@ -307,15 +311,16 @@ patchworktest5 <-
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-  # grDevices::pdf(here::here("data/Figure5.pdf"), height = 20, width = 20)
-  #  patchworktest5
-  #  dev.off()
+   # grDevices::pdf(here::here("data/Figure5.pdf"), height = 20, width = 20)
+   #  patchworktest5
+   #  dev.off()
 
 #####PseudoDEG on hepatocytes####
 PseudoHepatocytes <- Pseudobulk(SeuratHepatocytes)
 DEGHepatocytes <-DGEPseudo(PseudoHepatocytes)
 
-UpsetHepatocytes <- UpsetplotGenerationPseudo(DEGHepatocytes)
+UpsetHepatocytes <- UpsetplotGenerationPseudo(DEGHepatocytes,
+                                              "Pseudobulk - Hepatocyte Subset")
 
 GOCCPHvsLUp <- clusterProfiler::enrichGO(gene = subset(DEGHepatocytes$L_vs_PH,
                                                        log2FoldChange<0 & padj<0.05) |> dplyr::pull(gene),
@@ -326,7 +331,9 @@ GOCCPHvsLUp <- clusterProfiler::enrichGO(gene = subset(DEGHepatocytes$L_vs_PH,
 
 GOCCPHvsLUpTreeData <- enrichplot::pairwise_termsim(GOCCPHvsLUp)
 GOCCPHvsLUpTreePlot <- enrichplot::treeplot(GOCCPHvsLUpTreeData, nWords = 0) +
-    ggplot2::ggtitle("Clustering of genes with \n increased expression in PH vs L")
+    ggplot2::ggtitle("Clustering of genes with \n increased expression in PH vs L")+
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                      hjust = 0.5))
 
 GOCCLvsPHUp <- clusterProfiler::enrichGO(gene = subset(DEGHepatocytes$L_vs_PH,
                                                        log2FoldChange>0 & padj<0.05) |> dplyr::pull(gene),
@@ -337,7 +344,9 @@ GOCCLvsPHUp <- clusterProfiler::enrichGO(gene = subset(DEGHepatocytes$L_vs_PH,
 
 GOCCLvsPHUpTreeData <- enrichplot::pairwise_termsim(GOCCLvsPHUp)
 GOCCLvsPHUpTreePlot <- enrichplot::treeplot(GOCCLvsPHUpTreeData,nWords = 0) +
-    ggplot2::ggtitle("Clustering of genes with \n increased expression in L vs PH")
+    ggplot2::ggtitle("Clustering of genes with \n increased expression in L vs PH")+
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                      hjust = 0.5))
 
 GOCCLvsPHUpTreePlot + GOCCPHvsLUpTreePlot
 
@@ -358,9 +367,9 @@ patchworktest6 <-
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
- # grDevices::pdf(here::here("data/Figure6.pdf"), height = 20, width = 20)
- # patchworktest6
- # dev.off()
+  # grDevices::pdf(here::here("data/Figure6.pdf"), height = 20, width = 20)
+  # patchworktest6
+  # dev.off()
 
 #####Analysis and clustering of PH group####
 #  SeuratPH <- subset(SingleCellData,
@@ -452,11 +461,14 @@ marker_genes <- c("Alb",
                   "Gstp2")
 DotplotFigurePH <- Seurat::DotPlot(SeuratPH,
                                  features = marker_genes)+
+    ggplot2::ggtitle("Marker Genes - PH subset")+
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
                                                        vjust = 0.8,
                                                        size = 18),
-                   axis.text.y = ggplot2::element_text(size = 18))
-DotplotFigurePH
+                   axis.text.y = ggplot2::element_text(size = 18),
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(size = 24,
+                                                      hjust = 0.5))
 
 Idents(SeuratPH) <- "hash.mcl.ID"
 DimplotIndividualPH <- Seurat::DimPlot(SeuratPH,
@@ -554,29 +566,131 @@ Idents(SeuratEndothelial)<- "Group"
 
 DotplotFigureEndo <- Seurat::DotPlot(SeuratEndothelial,
                                  features = markers_endofigure)+
+    ggplot2::ggtitle("Marker Genes - Endothelial cells")+
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
                                                        vjust = 0.8,
                                                        size = 18),
-                   axis.text.y = ggplot2::element_text(size = 18))
-DotplotFigureEndo
+                   axis.text.y = ggplot2::element_text(size = 18),
+                   plot.title = ggplot2::element_text(hjust = 0.5,
+                                                      size = 24),
+                   axis.title = ggplot2::element_blank())
+
+
+#Annotate dedifferentiated epithelial cell cluster
+Seurat::Idents(SingleCellData)<-"seurat_clusters"
+SingleCellData <- RenameIdents(SingleCellData,
+                            "0" = "Dedifferentiated Hepatocyte",
+                            "1" = "Dedifferentiated Hepatocyte",
+                            "2" = "Hepatocytes",
+                            "3" = "Endothelial Cells",
+                            "4" = "Hepatocytes",
+                            "5" = "Hepatocytes",
+                            "6" = "Hepatocytes",
+                            "7" = "Hepatocytes",
+                            "8" = "Dedifferentiated Hepatocyte",
+                            "9" = "Hepatocytes",
+                            "10" = "Hepatocytes",
+                            "11" = "Hepatocytes",
+                            "12" = "Dedifferentiated Endothelial Cells",
+                            "13" = "Hepatocytes",
+                            "14" = "Dedifferentiated Hepatocyte",
+                            "15" = "Hepatocytes",
+                            "16" = "Kupfer Cells",
+                            "17" = "Dedifferentiated Hepatocyte",
+                            "18" = "Hepatocytes",
+                            "19" = "Hepatocytes",
+                            "20" = "Stellate Cells",
+                            "21" = "Hepatocytes",
+                            "22" = "Hepatocytes",
+                            "23" = "Hepatocytes",
+                            "24" = "Endothelial Cells",
+                            "25" = "Leukocyte",
+                            "26" = "Endothelial Cells",
+                            "27" = "Stellate Cells",
+                            "28" = "Billiary Epithelial Cells",
+                            "29" = "Leukocyte",
+                            "30" = "Billiary Epithelial Cells"
+)
+SingleCellData$updatedcelltype <- Seurat::Idents(SingleCellData)
+cellcount <- SingleCellData@meta.data |>
+    dplyr::group_by(Group) |>
+    dplyr::select(Group, updatedcelltype) |>
+    dplyr::count(updatedcelltype) |>
+    dplyr::rename(Celltype = updatedcelltype)
+
+cellcountfigure <- ggplot2::ggplot(cellcount, ggplot2::aes(x = n,
+                                        y = Group,
+                                        fill = Celltype)) +
+    ggplot2::geom_bar(position = "stack",
+                      stat = "identity") +
+    ggplot2::ggtitle("Cell Distribution in Sample Types") +
+    ggplot2::theme(
+        title = ggplot2::element_text(size = 24,
+                                      hjust = 0.5),
+        axis.text.y = ggplot2::element_text(size = 16),
+        axis.text.x = ggplot2::element_text(size = 14),
+        legend.text = ggplot2::element_text(size = 12),
+        panel.background = ggplot2::element_blank(),
+        axis.line = ggplot2::element_line(color = "black")
+
+    )+
+    ggplot2::ylab("")+
+    ggplot2::xlab("No. of cells")+
+    ggplot2::scale_fill_manual(
+        values = wesanderson::wes_palette("BottleRocket2",
+                                          n = 8,
+                                          type = "continuous")
+    )
+#make same plot but with ratio
+cellcount <- cellcount |>
+    dplyr::group_by(Group) |>
+    dplyr::mutate(
+        totalcells = sum(n),
+        percentage = n/totalcells*100
+    )
+cellratio <- ggplot2::ggplot(cellcount, ggplot2::aes(x = percentage,
+                                                     y = Group,
+                                                     fill = Celltype)) +
+    ggplot2::geom_bar(position = "stack",
+                      stat = "identity") +
+    ggplot2::ggtitle("% cells in Sample Types") +
+    ggplot2::theme(
+        title = ggplot2::element_text(size = 24,
+                                      hjust = 0.5),
+        axis.text.y = ggplot2::element_text(size = 16),
+        axis.text.x = ggplot2::element_text(size = 14),
+        legend.text = ggplot2::element_text(size = 12),
+        panel.background = ggplot2::element_blank(),
+        axis.line = ggplot2::element_line(color = "black")
+    )+
+    ggplot2::ylab("")+
+    ggplot2::xlab("%cells")+
+    ggplot2::scale_fill_manual(
+        values = wesanderson::wes_palette("Darjeeling1",
+                                          n = 8,
+                                          type = "continuous"))
+
 
 #####Figure 7####
 design_layout7 <- "
 1122
 3344
+5566
 "
 patchworktest7 <-
     DimplotCelltypePH+
     DotplotFigurePH+
+    cellcountfigure+
+    cellratio+
     DimplotEndothelial+
     DotplotFigureEndo+
     patchwork::plot_layout(design = design_layout7)+
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-  # grDevices::pdf(here::here("data/Figure7.pdf"), height = 20, width = 20)
-  # patchworktest7
-  # dev.off()
+     # grDevices::pdf(here::here("data/Figure7.pdf"), height = 20, width = 20)
+     # patchworktest7
+     # dev.off()
 
 #####Protein and RNA correlation####
 correlationData <- targets::tar_read(ProtRNACor)
@@ -591,23 +705,6 @@ annotatedCor <- dplyr::left_join(correlationData,
                                  by = "gene") |>
     dplyr::select(gene, log2FoldChange, logFC, celltype) |>
     dplyr::distinct()
-
-AnnotatedComparisonPlot <- ggplot2::ggplot(annotatedCor,
-                                           ggplot2::aes(x = log2FoldChange,
-                                                        y = logFC))+
-    ggplot2::geom_point(size = 2)+
-    ggplot2::theme_bw()+
-    ggplot2::xlab("Pseudobulk RNA exp. Log2FC")+
-    ggplot2::ylab("Protein Ab. Log2FC")+
-    ggplot2::ggtitle("Liver vs PH",
-                     "Protein abundance vs. RNA expression")+
-    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5,
-                                                      size = 24),
-                   plot.subtitle = ggplot2::element_text(hjust = 0.5,
-                                                         size = 22),
-                   axis.title = ggplot2::element_text(size = 20),
-                   axis.text = ggplot2::element_text(size = 20))+
-    ggplot2::facet_wrap(~celltype)
 
 #select candidates with either high or low abundance in cultured hepatocytes
 candidates <- annotatedCor|>
@@ -647,6 +744,9 @@ rownames(key) <- setup$SampleID
 key$Tissue <- factor(key$Tissue, c("liver", "CS", "PH"))
 
 #create heatmap
+Heatmap_title <- grid::textGrob("Candidates from proteomics data",
+                                gp = grid::gpar(fontsize = 24,
+                                          fontface = "bold"))
 HeatmapProteome <- pheatmap::pheatmap(trimmed_cpm,
                               treeheight_col = 0,
                               treeheight_row = 0,
@@ -663,10 +763,12 @@ HeatmapProteome <- pheatmap::pheatmap(trimmed_cpm,
                               annotation_col = key,
                               show_colnames = F,
                               show_rownames = T,
-                              main = "Candidates from proteomics data",
                               cluster_rows = T
 )
-HeatmapProteome <- ggplotify::as.ggplot(HeatmapProteome,scale = 1.5)
+HeatmapProteome <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
+                                                HeatmapProteome[[4]]),
+                                   heights = c(0.1, 1))
+HeatmapProteome <- ggplotify::as.ggplot(HeatmapProteome,scale = 1)
 
 glut1Plot <- Seurat::FeaturePlot(SingleCellData,
                          features = "Slc2a1",
@@ -683,10 +785,13 @@ glut2Plot <- Seurat::FeaturePlot(SingleCellData,
 Idents(SingleCellData)<-"celltype"
 DotplotCandidateFigure <- Seurat::DotPlot(SingleCellData,
                                  features = rownames(trimmed_cpm))+
+    ggplot2::ggtitle("Candidate Genes - RNA expression")+
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
                                                        vjust = 0.8,
                                                        size = 18),
-                   axis.text.y = ggplot2::element_text(size = 18)
+                   axis.text.y = ggplot2::element_text(size = 18),
+                   plot.title = ggplot2::element_text(hjust = 0.5,
+                                                      size = 24)
                    )+
     ggplot2::coord_flip()
 
@@ -705,6 +810,62 @@ patchworktest8 <-
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-  # grDevices::pdf(here::here("data/Figure8.pdf"), height = 20, width = 20)
-  # patchworktest8
-  # dev.off()
+     grDevices::pdf(here::here("data/Figure8.pdf"), height = 20, width = 20)
+     patchworktest8
+     dev.off()
+
+#####Figure 9####
+#Figure 9 is a GO analysis of the terms that do not change in hepatocytes.
+#tested on proteomics CC and RNA DEGs but they had few terms changing. Ended
+#using MF for proteomics instead
+DAPResults <- targets::tar_read(DAPResults)
+nonsigprots <- DAPResults$L_vs_PH |>
+    dplyr::filter(adj.P.Val > 0.05)
+
+eg <- clusterProfiler::bitr(
+    nonsigprots$Genes,
+    fromType = "SYMBOL",
+    toType = "ENTREZID",
+    OrgDb = "org.Mm.eg.db",
+    drop = T
+)
+
+bg <- clusterProfiler::bitr(
+    DAPResults$L_vs_PH$Genes,
+    fromType = "SYMBOL",
+    toType = "ENTREZID",
+    OrgDb = "org.Mm.eg.db",
+    drop = T
+)
+
+unchangedProtMF <- clusterProfiler::enrichGO(
+    gene = eg$ENTREZID,
+    universe = bg$ENTREZID,
+    key = "ENTREZID",
+    OrgDb = "org.Mm.eg.db",
+    ont = "MF",
+    readable = T
+)
+
+UnchangedDotPlot <- clusterProfiler::dotplot(unchangedProtMF)+
+    ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 24,
+                                   hjust = 0.5)) +
+    ggplot2::ggtitle("Proteins with unchanged abundance between L and PH")
+NormalizedMatrix <- targets::tar_read(NormalizedMatrix)
+ProteomicsSetup <- targets::tar_read(ProteomicsSetup)
+CatActHm <- proteomicsHeatmap(unchangedProtMF,
+                  targetrow = 1,
+                  counts = NormalizedMatrix,
+                  ProteomicsSetup,
+                  2.5)
+
+patchworktest9 <-
+    (UnchangedDotPlot+patchwork::plot_spacer())/
+    (CatActHm+patchwork::plot_spacer())+
+    patchwork::plot_annotation(tag_levels = "A")
+
+   # grDevices::pdf(here::here("data/Figure9.pdf"), height = 20, width = 20)
+   # patchworktest9
+   # dev.off()
+

@@ -4,6 +4,8 @@ Version: 0.0.1
 Depends: 
     tidyverse
 Suggests: 
+    grid,
+    gridExtra,
     qpdf,
     renv,
     styler,
@@ -21,6 +23,7 @@ Remotes:
     bioc::SingleCellExperiment,
     bioc::ggtreeExtra,
     RobinHankin/Brobdingnag
+    bioc::harmony
 Encoding: UTF-8
 Imports: 
     dplyr,
@@ -41,4 +44,4 @@ Imports:
     roxygen2,
     wesanderson,
     pheatmap,
-    Brobdingnag (>= 1.2.9)
+    Brobdingnag (>= 1.2.9),

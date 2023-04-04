@@ -191,7 +191,7 @@ ProteomicsMDS <- function(normalized_proteomics_res, setup) {
       legend.text = ggplot2::element_text(size = 18),
       plot.title = ggplot2::element_text(size = 22, hjust = 0.5)
     ) +
-    ggplot2::ggtitle("MDS Plot") +
+    ggplot2::ggtitle("MDS Plot - Proteomics Data") +
     ggplot2::xlab(paste("Dim1 (", round(100 * varianceExplained[1], 2), " %)", sep = "")) +
     ggplot2::ylab(paste("Dim2 (", round(100 * varianceExplained[2], 2), " %)", sep = ""))
   return(pBase)
@@ -253,11 +253,91 @@ UpsetProteomics <- function(limma_data) {
   # ggplotify to use the object in patchwork
   upsetProt <- ggplotify::as.ggplot(upsetProt)+
       ggplot2::ggtitle("Upset plot - Proteomics")+
-      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+      ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                        hjust = 0.5))
 
   return(upsetProt)
 }
 
+proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, cellheight){
+    #load setup data
+    setup <-setup |>
+        dplyr::arrange(Tissue = base::factor(Tissue, c("liver", "CS", "PH")))
+    #load counts
+    counts <- as.data.frame(counts)
+    counts <- counts |>
+        dplyr::mutate(ID = rownames(counts))
 
+    #Convert ID from accession no. to Symbol
+    keyID<- clusterProfiler::bitr(counts$ID,
+                                fromType = "ACCNUM",
+                                toType = "SYMBOL",
+                                OrgDb = "org.Mm.eg.db",
+                                drop = T)
+    keyID <- keyID |>
+        dplyr::distinct(ACCNUM, .keep_all = T)
+    counts <- dplyr::left_join(counts,
+                               keyID,
+                               by = c("ID"="ACCNUM"))
+
+    #Generate Gene list
+    if(class(GOobject)=="compareClusterResult"){
+        gene_list <- GOobject@compareClusterResult$geneID[targetrow]
+        heatmapname <- GOobject@compareClusterResult$Description[targetrow]
+    }
+    else if(class(GOobject)=="enrichResult"){
+        gene_list <- GOobject@result$geneID[targetrow]
+        heatmapname <- GOobject@result$Description[targetrow]
+    }
+    else{
+        print("No GO object detected")
+    }
+    gene_list <- unlist(str_split(gene_list, "/"))
+    #Select Candidates in Gene List
+    trimmed_cpm <- counts |>
+        dplyr::filter(SYMBOL %in% gene_list) |>
+        dplyr::distinct(SYMBOL, .keep_all = T)
+    trimmed_cpm <- trimmed_cpm |>
+        dplyr::filter(!is.na(SYMBOL))
+    rownames(trimmed_cpm)<-trimmed_cpm$SYMBOL
+    trimmed_cpm <- trimmed_cpm |>
+        dplyr::select(-SYMBOL, -ID)
+
+    #create annotation key for heatmap
+    key <- as.data.frame(setup)
+    key <- key |>
+        dplyr::select(Tissue)
+    rownames(key) <- setup$SampleID
+    key$Tissue <-factor(key$Tissue, c("liver", "CS", "PH"))
+
+    Heatmap_title <- grid::textGrob(heatmapname,
+                                    gp = grid::gpar(fontsize = 24,
+                                              fontface = "bold"))
+    #create heatmap
+    Heatmap <- pheatmap::pheatmap(trimmed_cpm,
+                                  treeheight_col = 0,
+                                  treeheight_row = 0,
+                                  scale = "row",
+                                  legend = T,
+                                  na_col = "white",
+                                  Colv = NA,
+                                  na.rm = T,
+                                  cluster_cols = F,
+                                  fontsize_row = 5,
+                                  fontsize_col = 8,
+                                  cellwidth = 20,
+                                  cellheight = cellheight,
+                                  annotation_col = key,
+                                  show_colnames = F,
+                                  show_rownames = F,
+                                  cluster_rows = T
+    )
+    Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
+                              Heatmap[[4]]),
+                 heights = c(0.1, 1))
+    Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+    return(Heatmap)
+
+}
 
 
