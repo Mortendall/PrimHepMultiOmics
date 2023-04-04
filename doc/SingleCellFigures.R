@@ -421,26 +421,26 @@ DimplotClusterPH <- Seurat::DimPlot(SeuratPH,
 #assign cell identities based on marker gene expression
 Seurat::Idents(SeuratPH)<- "seurat_clusters"
 SeuratPH <- RenameIdents(SeuratPH,
-                            "0" = "Dedifferentiated Hepatocytes",
-                            "1" = "Dedifferentiated Hepatocytes",
-                            "2" = "Dedifferentiated Hepatocytes",
-                            "3" = "Dedifferentiated Hepatocytes",
-                            "4" = "Dedifferentiated Hepatocytes",
-                            "5" = "Dedifferentiated Hepatocytes",
-                            "6" = "Dedifferentiated Endothelial Cells",
-                            "7" = "Dedifferentiated Hepatocytes",
-                            "8" = "Dedifferentiated Hepatocytes",
-                            "9" = "Dedifferentiated Hepatocytes",
-                            "10" = "Dedifferentiated Hepatocytes",
-                            "11" = "Dedifferentiated Hepatocytes",
-                            "12" = "Dedifferentiated Hepatocytes",
-                            "13" = "Dedifferentiated Hepatocytes",
-                            "14" = "Dedifferentiated Hepatocytes",
-                            "15" = "Dedifferentiated Hepatocytes",
-                            "16" = "Dedifferentiated Hepatocytes",
+                            "0" = "Dedifferentiated \nHepatocytes",
+                            "1" = "Dedifferentiated \nHepatocytes",
+                            "2" = "Dedifferentiated \nHepatocytes",
+                            "3" = "Dedifferentiated \nHepatocytes",
+                            "4" = "Dedifferentiated \nHepatocytes",
+                            "5" = "Dedifferentiated \nHepatocytes",
+                            "6" = "Dedifferentiated \nEndothelial Cells",
+                            "7" = "Dedifferentiated \nHepatocytes",
+                            "8" = "Dedifferentiated \nHepatocytes",
+                            "9" = "Dedifferentiated \nHepatocytes",
+                            "10" = "Dedifferentiated \nHepatocytes",
+                            "11" = "Dedifferentiated \nHepatocytes",
+                            "12" = "Dedifferentiated \nHepatocytes",
+                            "13" = "Dedifferentiated \nHepatocytes",
+                            "14" = "Dedifferentiated \nHepatocytes",
+                            "15" = "Dedifferentiated \nHepatocytes",
+                            "16" = "Dedifferentiated \nHepatocytes",
                             "17" = "Stellate Cells",
-                            "18" = "Dedifferentiated Hepatocytes",
-                            "19" = "Dedifferentiated Hepatocytes",
+                            "18" = "Dedifferentiated \nHepatocytes",
+                            "19" = "Dedifferentiated \nHepatocytes",
                             "20" = "Endothelial Cells",
                             "21" = "Hepatocytes"
 )
@@ -688,9 +688,9 @@ patchworktest7 <-
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-     # grDevices::pdf(here::here("data/Figure7.pdf"), height = 20, width = 20)
-     # patchworktest7
-     # dev.off()
+      # grDevices::pdf(here::here("data/Figure7.pdf"), height = 20, width = 20)
+      # patchworktest7
+      # dev.off()
 
 #####Protein and RNA correlation####
 correlationData <- targets::tar_read(ProtRNACor)
@@ -787,7 +787,7 @@ DotplotCandidateFigure <- Seurat::DotPlot(SingleCellData,
                                  features = rownames(trimmed_cpm))+
     ggplot2::ggtitle("Candidate Genes - RNA expression")+
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
-                                                       vjust = 0.8,
+                                                       vjust = 0.65,
                                                        size = 18),
                    axis.text.y = ggplot2::element_text(size = 18),
                    plot.title = ggplot2::element_text(hjust = 0.5,
@@ -810,9 +810,9 @@ patchworktest8 <-
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-     grDevices::pdf(here::here("data/Figure8.pdf"), height = 20, width = 20)
-     patchworktest8
-     dev.off()
+      grDevices::pdf(here::here("data/Figure8.pdf"), height = 20, width = 20)
+      patchworktest8
+      dev.off()
 
 #####Figure 9####
 #Figure 9 is a GO analysis of the terms that do not change in hepatocytes.
@@ -851,21 +851,43 @@ UnchangedDotPlot <- clusterProfiler::dotplot(unchangedProtMF)+
     ggplot2::theme(
         plot.title = ggplot2::element_text(size = 24,
                                    hjust = 0.5)) +
-    ggplot2::ggtitle("Proteins with unchanged abundance between L and PH")
+    ggplot2::ggtitle("GSE Analysis for Molecular function \nProteins with unchanged abundance between L and PH")
 NormalizedMatrix <- targets::tar_read(NormalizedMatrix)
 ProteomicsSetup <- targets::tar_read(ProteomicsSetup)
+#prepare 3 heatmaps for figure. One for catalytic activity (term 1), one for
+# glutatione transferase activity (term 2) and one for peptidase activity (term 5)
 CatActHm <- proteomicsHeatmap(unchangedProtMF,
                   targetrow = 1,
                   counts = NormalizedMatrix,
                   ProteomicsSetup,
                   2.5)
+glutathioneHm <- proteomicsHeatmap(unchangedProtMF,
+                              targetrow = 2,
+                              counts = NormalizedMatrix,
+                              ProteomicsSetup,
+                              20)
+peptidaseHm <- proteomicsHeatmap(unchangedProtMF,
+                                    targetrow = 5,
+                                    counts = NormalizedMatrix,
+                                    ProteomicsSetup,
+                                    3)
+
+design_layout9 <- "
+1122
+1122
+33##
+44##
+"
 
 patchworktest9 <-
-    (UnchangedDotPlot+patchwork::plot_spacer())/
-    (CatActHm+patchwork::plot_spacer())+
-    patchwork::plot_annotation(tag_levels = "A")
+    UnchangedDotPlot+
+    CatActHm+
+    glutathioneHm+peptidaseHm+
+    patchwork::plot_layout(design = design_layout9)+
+    patchwork::plot_annotation(tag_levels = "A")&
+    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-   # grDevices::pdf(here::here("data/Figure9.pdf"), height = 20, width = 20)
-   # patchworktest9
-   # dev.off()
+      # grDevices::pdf(here::here("data/Figure9.pdf"), height = 20, width = 20)
+      # patchworktest9
+      # dev.off()
 
