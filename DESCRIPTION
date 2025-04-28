@@ -30,7 +30,6 @@ Imports:
     here,
     knitr,
     lintr,
-    Matrix.utils,
     openxlsx,
     rmarkdown,
     scuttle,

@@ -178,7 +178,7 @@ MDSanalysis <- function(RNAseq, metadata) {
 
   pBase <-
     ggplot2::ggplot(mdsData, ggplot2::aes(x = dim1, y = dim2, colour = Group)) +
-    ggplot2::geom_point(size = 10) +
+    ggplot2::geom_point(size = 8) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       axis.title.x = ggplot2::element_text(size = 18),
@@ -186,7 +186,7 @@ MDSanalysis <- function(RNAseq, metadata) {
       legend.text = ggplot2::element_text(size = 18),
       plot.title = ggplot2::element_text(size = 22, hjust = 0.5)
     ) +
-    ggplot2::ggtitle("MDS Plot - RNAseq analysis") +
+    ggplot2::ggtitle("\n MDS Plot - RNAseq analysis") +
     ggplot2::xlab(paste("Dim1 (", round(100 * varianceExplained[1], 2), " %)", sep = "")) +
     ggplot2::ylab(paste("Dim2 (", round(100 * varianceExplained[2], 2), " %)", sep = ""))
   return(pBase)
@@ -257,15 +257,15 @@ UpsetplotGeneration <- function(dgeResults_annotated) {
     ))
   )
   # ggplotify to use the object in patchwork
-  upsetRNA <- ggplotify::as.ggplot(upsetRNA)
+  upsetRNA <- ggplotify::as.ggplot(upsetRNA,scale = 1.1)
   upsetRNA <- upsetRNA +
      ggplot2::ggtitle("No. of differentially expressed genes between groups") +
     ggplot2::theme(plot.title = ggplot2::element_text(
-      size = 24,
+      size = 22,
       hjust = 0.5,
-      vjust = 0.95
+      vjust = 1.50
     ))
-  upsetRNA <- ggplotify::as.ggplot(upsetRNA)
+  upsetRNA <- ggplotify::as.ggplot(upsetRNA,vjust = 0.1)
   return(upsetRNA)
 }
 
@@ -377,15 +377,15 @@ PrepareComparison <- function(dgeResults_annotated, Groupnames) {
 GOCCSplit <- function(dgeResults_annotated) {
   L_vs_CS <- PrepareComparison(
     dgeResults_annotated[[1]],
-    c("Upregulated in L vs CS", "Upregulated in CS vs L")
+    c("Upregulated in L vs CS", "Downregulated in L vs CS")
   )
   L_vs_PH <- PrepareComparison(
     dgeResults_annotated[[2]],
-    c("Upregulated in L vs PH", "Upregulated in PH vs L")
+    c("Upregulated in L vs PH", "Downregulated in L vs PH")
   )
   PH_vs_CS <- PrepareComparison(
     dgeResults_annotated[[3]],
-    c("Upregulated in CS vs PH", "Upregulated in PH vs CS")
+    c("Upregulated in CS vs PH", "Downregulated in CS vs PH")
   )
   All_comparisons <- c(L_vs_CS, L_vs_PH, PH_vs_CS)
 
@@ -426,7 +426,7 @@ GOCCSplit <- function(dgeResults_annotated) {
 DotplotCC <- function(clusterCompare_All, title) {
   CompareClusterFigure_All <- clusterProfiler::dotplot(clusterCompare_All,
                                                        by = "count",
-                                                       showCategory = 5) +
+                                                       showCategory = 3) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(
       angle = 30,
       vjust = 1,
@@ -529,7 +529,7 @@ CPMPlotsProteomics <- function(normalized_proteomics_res) {
 #'
 #' @return
 
-RNAHeatmap <- function(GOobject,targetrow, DGElist, setup){
+RNAHeatmap <- function(GOobject,targetrow, DGElist, setup, cellheights){
     #prepare setup file
     setup <-setup |>
             dplyr::arrange(Group = base::factor(Group, c("L", "CS", "PH")))
@@ -588,9 +588,9 @@ RNAHeatmap <- function(GOobject,targetrow, DGElist, setup){
         key$Group <- factor(key$Group, c("L", "CS", "PH"))
 
         #create heatmap
-        Heatmap_title <- grid::textGrob(heatmapname,
-                                        gp = gpar(fontsize = 24,
-                                                  fontface = "bold"))
+        # Heatmap_title <- grid::textGrob(heatmapname,
+        #                                 gp = gpar(fontsize = 24,
+        #                                           fontface = "bold"))
         Heatmap <- pheatmap::pheatmap(trimmed_cpm,
                                       treeheight_col = 0,
                                       treeheight_row = 0,
@@ -603,19 +603,36 @@ RNAHeatmap <- function(GOobject,targetrow, DGElist, setup){
                                       fontsize_row = 5,
                                       fontsize_col = 8,
                                       cellwidth = 20,
-                                      cellheight = 1.5,
+                                      cellheight = cellheights,
                                       annotation_col = key,
                                       show_colnames = F,
                                       show_rownames = F,
                                       cluster_rows = T
         )
-        Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
-                                                        Heatmap[[4]]),
-                                           heights = c(0.1, 1))
-        Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
-        Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+        # Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
+        #                                                 Heatmap[[4]]),
+        #                                    heights = c(0.1, 1))
+        # Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+        # Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+        Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1, hjust = 0.1)
+        Heatmap <- Heatmap +
+            ggplot2::ggtitle(stringr::str_to_title(heatmapname))+
+            ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                              hjust = 0.5))
         return(Heatmap)
 
 
 
+}
+
+#' write_excel_sheet
+#'
+#' @param input tar_object to write
+#' @param filename filename
+#'
+#' @return
+
+write_excel_file <- function(input, filename){
+    openxlsx::write.xlsx(x = input,
+                         file = here::here(paste0("data/",filename,".xlsx")))
 }

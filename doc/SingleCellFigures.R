@@ -65,7 +65,7 @@ DimPlotCellType<- Seurat::DimPlot(SingleCellData,
                          label = T,
                          label.size = 6,
                          repel = T,
-                         cols = wesanderson::wes_palette(7,
+                         cols = wesanderson::wes_palette(8,
                                                          name = "FantasticFox1",
                                                          type = "continuous"),
                          label.box = T) +
@@ -124,21 +124,21 @@ Cyp2e1Plot <- Seurat::FeaturePlot(SingleCellData,
                                   features = "Cyp2e1",
                                   pt.size = 1)+
     ggplot2::ggtitle("Cyp2e1 - Central Marker")+
-    ggplot2::theme(title = ggplot2::element_text(size = 22))
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 22))
 
 Cyp2f2Plot <- Seurat::FeaturePlot(SingleCellData,
                                   features = "Hal",
                                   pt.size = 1)+
     ggplot2::ggtitle("Hal - Portal Marker")+
-    ggplot2::theme(title = ggplot2::element_text(size = 22))
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 22))
 
 #####Figure 4####
 
 options(ggrepel.max.overlaps = Inf)
 
 design_layout4 <- "
-1133
-2244
+1122
+3344
 5566
 ####
 "
@@ -150,11 +150,14 @@ patchworktest4 <- DimPlotGroup+
     Cyp2f2Plot+
     patchwork::plot_layout(design = design_layout4)+
     patchwork::plot_annotation(tag_levels = "A")&
-    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
+    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20,
+                                                    face = "plain"))
 
-     # grDevices::pdf(here::here("data/Figure4.pdf"), height = 20, width = 20)
-     #  patchworktest4
-     #  dev.off()
+patchworktest4 <- patchworktest4 + patchwork::plot_annotation(title = "Figure 4",
+                                            theme = theme(plot.title = ggplot2::element_text(size = 26)))
+       grDevices::pdf(here::here("data/Figure4.pdf"), height = 20, width = 20)
+        patchworktest4
+        dev.off()
 
 #####Hepatocyte Subset####
 #Subset data to only include hepatocytes and cultured hepatocytes
@@ -295,8 +298,10 @@ HalHepa <- Seurat::FeaturePlot(SeuratHepatocytes,
     ggplot2::ggtitle("Hal- Portal Marker")+
     ggplot2::theme(title = ggplot2::element_text(size = 22))
 
-#####Figure 5####
-
+#####SupportingFig2.pdf####
+#this used to be figure 5. Hence annotation for this and subsequent figures
+#is slightly mismatched. I was too lazy to fix it, and too scared of
+#breaking dependencies to move things around. Please accept my apologies.
 
 design_layout5 <- "
 1133
@@ -309,16 +314,22 @@ patchworktest5 <-
     HalHepa+
     patchwork::plot_layout(design = design_layout5)+
     patchwork::plot_annotation(tag_levels = "A")&
-    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
+    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20,
+                                                    face = "plain"))
 
-   # grDevices::pdf(here::here("data/Figure5.pdf"), height = 20, width = 20)
-   #  patchworktest5
-   #  dev.off()
+patchworktest5 <- patchworktest5 + patchwork::plot_annotation(title = "Supporting Fig. 2",
+                                                                               theme = theme(plot.title = ggplot2::element_text(size = 26)))
+
+    grDevices::pdf(here::here("data/data/SupportingFig2.pdf.pdf"), height = 20, width = 20)
+     patchworktest5
+     dev.off()
 
 #####PseudoDEG on hepatocytes####
 PseudoHepatocytes <- Pseudobulk(SeuratHepatocytes)
 DEGHepatocytes <-DGEPseudo(PseudoHepatocytes)
 
+#write excel file
+write_excel_file(DEGHepatocytes, "SupportingFile8")
 UpsetHepatocytes <- UpsetplotGenerationPseudo(DEGHepatocytes,
                                               "Pseudobulk - Hepatocyte Subset")
 
@@ -328,7 +339,6 @@ GOCCPHvsLUp <- clusterProfiler::enrichGO(gene = subset(DEGHepatocytes$L_vs_PH,
                                          keyType = "SYMBOL",
                                          universe = DEGHepatocytes$L_vs_PH$gene,
                                          ont = "CC")
-
 GOCCPHvsLUpTreeData <- enrichplot::pairwise_termsim(GOCCPHvsLUp)
 GOCCPHvsLUpTreePlot <- enrichplot::treeplot(GOCCPHvsLUpTreeData, nWords = 0) +
     ggplot2::ggtitle("Clustering of genes with \n increased expression in PH vs L")+
@@ -350,7 +360,12 @@ GOCCLvsPHUpTreePlot <- enrichplot::treeplot(GOCCLvsPHUpTreeData,nWords = 0) +
 
 GOCCLvsPHUpTreePlot + GOCCPHvsLUpTreePlot
 
-#####Figure 6####
+GOCC_ExcelExport <- list("PHvsLUp"=GOCCPHvsLUp@result,
+                         "LvsPHUp"= GOCCLvsPHUp@result)
+#write the merged object as Excel file
+write_excel_file(GOCC_ExcelExport, "SupportingFig9")
+
+#####Figure 5####
 
 
 design_layout6 <- "
@@ -366,10 +381,11 @@ patchworktest6 <-
     patchwork::plot_layout(design = design_layout6)+
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
-
-  # grDevices::pdf(here::here("data/Figure6.pdf"), height = 20, width = 20)
-  # patchworktest6
-  # dev.off()
+patchworktest6 <- patchworktest6 + patchwork::plot_annotation(title = "Figure 5",
+                                                                            theme = theme(plot.title = ggplot2::element_text(size = 26)))
+   grDevices::pdf(here::here("data/Figure5.pdf"), height = 20, width = 20)
+   patchworktest6
+   dev.off()
 
 #####Analysis and clustering of PH group####
 #  SeuratPH <- subset(SingleCellData,
@@ -411,7 +427,7 @@ DimplotClusterPH <- Seurat::DimPlot(SeuratPH,
                                                                            name = "Darjeeling1",
                                                                            type = "continuous"),
                                            label.box = T) +
-    ggplot2::ggtitle("DimPlot By Cluster \n for PH samples") +
+    ggplot2::ggtitle("DimPlot by cluster \n for PH samples") +
     ggplot2::theme(
         plot.title = ggplot2::element_text(hjust = 0.5,
                                            size = 24),
@@ -468,7 +484,8 @@ DotplotFigurePH <- Seurat::DotPlot(SeuratPH,
                    axis.text.y = ggplot2::element_text(size = 18),
                    axis.title = ggplot2::element_blank(),
                    plot.title = ggplot2::element_text(size = 24,
-                                                      hjust = 0.5))
+                                                      hjust = 0.5,
+                                                      face = "bold"))
 
 Idents(SeuratPH) <- "hash.mcl.ID"
 DimplotIndividualPH <- Seurat::DimPlot(SeuratPH,
@@ -528,6 +545,7 @@ DimplotCelltypePH <- Seurat::DimPlot(SeuratPH,
 
  SeuratEndothelial<- readRDS(here::here("data/EndothelialSubset.rds"))
  Idents(SeuratEndothelial)<- "Group"
+
 
  DimplotEndothelial <- Seurat::DimPlot(SeuratEndothelial,
                                         pt.size = 0.7,
@@ -623,12 +641,14 @@ cellcountfigure <- ggplot2::ggplot(cellcount, ggplot2::aes(x = n,
                                         fill = Celltype)) +
     ggplot2::geom_bar(position = "stack",
                       stat = "identity") +
-    ggplot2::ggtitle("Cell Distribution in Sample Types") +
+    ggplot2::ggtitle("Cell distribution in sample types") +
     ggplot2::theme(
-        title = ggplot2::element_text(size = 24,
-                                      hjust = 0.5),
+        plot.title = ggplot2::element_text(size = 24,
+                                      hjust = 0.5,
+                                      face = "bold"),
         axis.text.y = ggplot2::element_text(size = 16),
         axis.text.x = ggplot2::element_text(size = 14),
+        axis.title.x = ggplot2::element_text(size = 16),
         legend.text = ggplot2::element_text(size = 12),
         panel.background = ggplot2::element_blank(),
         axis.line = ggplot2::element_line(color = "black")
@@ -653,12 +673,14 @@ cellratio <- ggplot2::ggplot(cellcount, ggplot2::aes(x = percentage,
                                                      fill = Celltype)) +
     ggplot2::geom_bar(position = "stack",
                       stat = "identity") +
-    ggplot2::ggtitle("% cells in Sample Types") +
+    ggplot2::ggtitle("% cells in sample types") +
     ggplot2::theme(
         title = ggplot2::element_text(size = 24,
-                                      hjust = 0.5),
+                                      hjust = 0.5,
+                                      face = "bold"),
         axis.text.y = ggplot2::element_text(size = 16),
         axis.text.x = ggplot2::element_text(size = 14),
+        axis.title.x = ggplot2::element_text(size = 16),
         legend.text = ggplot2::element_text(size = 12),
         panel.background = ggplot2::element_blank(),
         axis.line = ggplot2::element_line(color = "black")
@@ -671,26 +693,34 @@ cellratio <- ggplot2::ggplot(cellcount, ggplot2::aes(x = percentage,
                                           type = "continuous"))
 
 
-#####Figure 7####
+#####Figure 6####
 design_layout7 <- "
 1122
+1122
+1122
 3344
+3344
+####
+5566
+5566
 5566
 "
 patchworktest7 <-
-    DimplotCelltypePH+
+    patchwork::free(DimplotCelltypePH, type = "label")+
     DotplotFigurePH+
     cellcountfigure+
     cellratio+
-    DimplotEndothelial+
+   patchwork::free(DimplotEndothelial, type = "label")+
     DotplotFigureEndo+
     patchwork::plot_layout(design = design_layout7)+
     patchwork::plot_annotation(tag_levels = "A")&
-    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
-
-      # grDevices::pdf(here::here("data/Figure7.pdf"), height = 20, width = 20)
-      # patchworktest7
-      # dev.off()
+    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20, face = "plain"))
+patchworktest7 <- patchworktest7 + patchwork::plot_annotation(title = "Figure 6",
+                                                              theme = theme(plot.title = ggplot2::element_text(size = 26,
+                                                                                                               face = "plain")))
+       grDevices::pdf(here::here("data/Figure6.pdf"), height = 20, width = 20)
+       patchworktest7
+       dev.off()
 
 #####Protein and RNA correlation####
 correlationData <- targets::tar_read(ProtRNACor)
@@ -744,9 +774,9 @@ rownames(key) <- setup$SampleID
 key$Tissue <- factor(key$Tissue, c("liver", "CS", "PH"))
 
 #create heatmap
-Heatmap_title <- grid::textGrob("Candidates from proteomics data",
-                                gp = grid::gpar(fontsize = 24,
-                                          fontface = "bold"))
+# Heatmap_title <- grid::textGrob("Candidates from proteomics data",
+#                                 gp = grid::gpar(fontsize = 24,
+#                                           fontface = "bold"))
 HeatmapProteome <- pheatmap::pheatmap(trimmed_cpm,
                               treeheight_col = 0,
                               treeheight_row = 0,
@@ -759,16 +789,23 @@ HeatmapProteome <- pheatmap::pheatmap(trimmed_cpm,
                               fontsize_row = 12,
                               fontsize_col = 12,
                               cellwidth = 16,
-                              cellheight = 12,
+                              cellheight = 17,
                               annotation_col = key,
                               show_colnames = F,
                               show_rownames = T,
-                              cluster_rows = T
+                              cluster_rows = T,
+                              #main = "Candidates from proteomics data",
+                              fontsize = 18
 )
-HeatmapProteome <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
-                                                HeatmapProteome[[4]]),
-                                   heights = c(0.1, 1))
+# HeatmapProteome <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
+#                                                 HeatmapProteome[[4]]),
+#                                    heights = c(0.1, 1))
 HeatmapProteome <- ggplotify::as.ggplot(HeatmapProteome,scale = 1)
+HeatmapProteome <- HeatmapProteome +
+    ggplot2::ggtitle("Candidates from proteomics data")+
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                      hjust = 0.5,
+                                                      face = "bold"))
 
 glut1Plot <- Seurat::FeaturePlot(SingleCellData,
                          features = "Slc2a1",
@@ -796,7 +833,7 @@ DotplotCandidateFigure <- Seurat::DotPlot(SingleCellData,
     ggplot2::coord_flip()
 
 
-#####Figure 8####
+#####Figure 7####
 design_layout8 <- "
 1122
 3344
@@ -808,13 +845,16 @@ patchworktest8 <-
     glut2Plot+
     patchwork::plot_layout(design = design_layout8)+
     patchwork::plot_annotation(tag_levels = "A")&
-    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
+    ggplot2::theme(plot.tag = ggplot2::element_text(size = 20,
+                                                    face = "plain"))
 
-      grDevices::pdf(here::here("data/Figure8.pdf"), height = 20, width = 20)
+patchworktest8 <- patchworktest8 + patchwork::plot_annotation(title = "Figure 7",
+                                                              theme = theme(plot.title = ggplot2::element_text(size = 26)))
+      grDevices::pdf(here::here("data/Figure7.pdf"), height = 20, width = 20)
       patchworktest8
       dev.off()
 
-#####Figure 9####
+#####Supporting Figure 1####
 #Figure 9 is a GO analysis of the terms that do not change in hepatocytes.
 #tested on proteomics CC and RNA DEGs but they had few terms changing. Ended
 #using MF for proteomics instead
@@ -848,29 +888,29 @@ unchangedProtMF <- clusterProfiler::enrichGO(
 )
 
 UnchangedDotPlot <- clusterProfiler::dotplot(unchangedProtMF)+
+    ggplot2::ggtitle("GSE Analysis for Molecular function \nProteins with unchanged abundance between L and PH")+
     ggplot2::theme(
         plot.title = ggplot2::element_text(size = 24,
-                                   hjust = 0.5)) +
-    ggplot2::ggtitle("GSE Analysis for Molecular function \nProteins with unchanged abundance between L and PH")
+                                   hjust = 0.5))
 NormalizedMatrix <- targets::tar_read(NormalizedMatrix)
 ProteomicsSetup <- targets::tar_read(ProteomicsSetup)
-#prepare 3 heatmaps for figure. One for catalytic activity (term 1), one for
-# glutatione transferase activity (term 2) and one for peptidase activity (term 5)
+#prepare 3 heatmaps for figure. One for catalytic activity (term 2), one for
+# glutatione transferase activity (term 1) and one for peptidase activity (term 7)
 CatActHm <- proteomicsHeatmap(unchangedProtMF,
-                  targetrow = 1,
+                  targetrow = 2,
                   counts = NormalizedMatrix,
                   ProteomicsSetup,
-                  2.5)
+                  2.8)
 glutathioneHm <- proteomicsHeatmap(unchangedProtMF,
-                              targetrow = 2,
+                              targetrow = 1,
                               counts = NormalizedMatrix,
                               ProteomicsSetup,
                               20)
 peptidaseHm <- proteomicsHeatmap(unchangedProtMF,
-                                    targetrow = 5,
+                                    targetrow = 7,
                                     counts = NormalizedMatrix,
                                     ProteomicsSetup,
-                                    3)
+                                    3.5)
 
 design_layout9 <- "
 1122
@@ -887,7 +927,10 @@ patchworktest9 <-
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-      # grDevices::pdf(here::here("data/Figure9.pdf"), height = 20, width = 20)
-      # patchworktest9
-      # dev.off()
+patchworktest9 <- patchworktest9 + patchwork::plot_annotation(title = "Supporting Fig. 1",
+                                                              theme = theme(plot.title = ggplot2::element_text(size = 26)))
+
+       grDevices::pdf(here::here("data/SupportingFig1.pdf"), height = 20, width = 20)
+       patchworktest9
+       dev.off()
 

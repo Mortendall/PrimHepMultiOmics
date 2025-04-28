@@ -14,7 +14,7 @@ loadSingleCell <- function(seuratobject) {
   seurat_test <- readRDS(data_file)
 
   # Assign samples to groups
-  seurat_test <- readRDS(data_file)
+
   Idents(seurat_test) <- "hash.mcl.ID"
   seurat_test <- RenameIdents(seurat_test,
     "L1" = "L",
@@ -58,15 +58,15 @@ loadSingleCell <- function(seuratobject) {
   seurat_test <- RenameIdents(seurat_test,
     "0" = "Cultured Cells",
     "1" = "Cultured Cells",
-    "2" = "Hepatocytes",
+    "2" = "Isolated Hepatocytes",
     "3" = "Endothelial Cells",
-    "4" = "Hepatocytes",
+    "4" = "Isolated Hepatocytes",
     "5" = "Hepatocytes",
     "6" = "Hepatocytes",
-    "7" = "Hepatocytes",
+    "7" = "Isolated Hepatocytes",
     "8" = "Cultured Cells",
     "9" = "Hepatocytes",
-    "10" = "Hepatocytes",
+    "10" = "Isolated Hepatocytes",
     "11" = "Hepatocytes",
     "12" = "Cultured Cells",
     "13" = "Hepatocytes",
@@ -77,7 +77,7 @@ loadSingleCell <- function(seuratobject) {
     "18" = "Hepatocytes",
     "19" = "Hepatocytes",
     "20" = "Stellate Cells",
-    "21" = "Hepatocytes",
+    "21" = "Isolated Hepatocytes",
     "22" = "Hepatocytes",
     "23" = "Hepatocytes",
     "24" = "Endothelial Cells",
@@ -146,7 +146,7 @@ Pseudobulk <- function(seuratObject) {
 
   groups <- SummarizedExperiment::colData(sce)[, c("Group", "hash.mcl.ID")]
 
-  pb <- Matrix.utils::aggregate.Matrix(t(counts(sce)),
+  pb <- Matrix.utils::aggregate.Matrix(BiocGenerics::t(SingleCellExperiment::counts(sce)),
     groupings = groups,
     fun = "sum"
   )
@@ -162,7 +162,7 @@ Pseudobulk <- function(seuratObject) {
 
   # Turn into a list and split the list into components for each cluster and transform, so rows are genes and columns are samples and make rownames as the sample IDs
   pb <- magrittr::set_colnames(
-    t(pb),
+    BiocGenerics::t(pb),
     stringr::str_extract(rownames(pb), "(?<=_)[:alnum:]+")
   )
   analysis_metadata <- data.frame(
@@ -173,7 +173,7 @@ Pseudobulk <- function(seuratObject) {
 
   rownames(analysis_metadata) <- analysis_metadata$hash.mcl.ID
 
-  cluster_counts <- data.frame(pb)
+  cluster_counts <- BiocGenerics::as.data.frame(pb)
 
   all(rownames(analysis_metadata) == colnames(cluster_counts))
 
@@ -273,30 +273,33 @@ ProteinRNACorrelation <- function(RNAdata, proteindata) {
 #'
 #' @return
 
-ProteinRNACorFigure <- function(ProteinRNAComparison, GOobject){
+ProteinRNACorFigure <- function(ProteinRNAComparison){
 
-    mitogenes <- genelistgenerator(GOobject,
-                                   77)
-    ECMgenes <- genelistgenerator(GOobject,
-                                  2)
-    Ribosome <- genelistgenerator(GOobject,
-                                  25)
+    GOterms <- AnnotationDbi::mapIds(org.Mm.eg.db,
+                                     keys(org.Mm.eg.db, "GOALL"),
+                                     "SYMBOL",
+                                     "GOALL",
+                                     multiVals = "list")
+    mitogenes <- GOterms[["GO:0005743"]]
+    ECMgenes <- GOterms[["GO:0031012"]]
+    Ribosome <- GOterms[["GO:1990904"]]
 
-    ProteinRNAComparison <- ProteinRNAComparison |>
+
+    ProteinRNAComparison <- ProteinRNAComparison|>
         dplyr::mutate(GOaffiliation = dplyr::case_when(
             magrittr::is_in(gene, mitogenes)==T~ "Mitochondrial inner membrane",
-            magrittr::is_in(gene, ECMgenes)==T~ "Extracellular region",
+            magrittr::is_in(gene, ECMgenes)==T~ "Extracellular matrix",
             magrittr::is_in(gene, Ribosome)==T~ "Ribonucleoprotein complex",
             TRUE ~ "Other"
         )
         ) |>
         dplyr::arrange(GOaffiliation = factor(GOaffiliation,
-                                             levels = c("Other",
-                                                        "Mitochondrial inner membrane",
-                                                        "Extracellular region",
-                                                        "Ribonucleoprotein complex")
-                                             )
-                      )
+                                              levels = c("Other",
+                                                         "Mitochondrial inner membrane",
+                                                         "Ribonucleoprotein complex",
+                                                         "Extracellular matrix")
+        )
+        )
 
     ComparisonPlot <- ggplot2::ggplot(ProteinRNAComparison,
                                       ggplot2::aes(x = log2FoldChange,
@@ -304,17 +307,26 @@ ProteinRNACorFigure <- function(ProteinRNAComparison, GOobject){
                                                    color = GOaffiliation))+
         ggplot2::geom_point(size = 2)+
         ggplot2::theme_bw()+
-        ggplot2::xlab("Pseudobulk RNA exp. Log2FC")+
-        ggplot2::ylab("Protein Ab. Log2FC")+
+        ggplot2::xlab("RNA expression \n L vs PH (Log2 fold change)")+
+        ggplot2::ylab("Protein abundance \n L vs PH (Log2 fold change)")+
         ggplot2::ggtitle("Liver vs PH",
                          "Protein abundance vs. RNA expression")+
         ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5,
                                                           size = 24),
                        plot.subtitle = ggplot2::element_text(hjust = 0.5,
                                                              size = 22),
-                       axis.title = ggplot2::element_text(size = 20),
-                       axis.text = ggplot2::element_text(size = 20))+
-        ggplot2::scale_color_manual(values = wesanderson::wes_palette("Moonrise2",4))
+                       axis.title = ggplot2::element_text(size = 16),
+                       axis.text = ggplot2::element_text(size = 20),
+                       legend.text = ggplot2::element_text(size = 16))+
+        ggplot2::scale_color_manual(values = viridis::turbo(4))+
+        ggplot2::geom_hline(yintercept = 0, linetype = "dashed")+
+        ggplot2::geom_vline(xintercept = 0, linetype = "dashed")+
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 5)))+
+        ggplot2::facet_wrap(~factor(GOaffiliation,
+                                    levels = c("Other",
+                                               "Mitochondrial inner membrane",
+                                               "Ribonucleoprotein complex",
+                                               "Extracellular matrix")), ncol = 1)
 
     return(ComparisonPlot)
 }
@@ -512,15 +524,15 @@ UpsetplotGenerationPseudo <- function(dgeResults_annotated, plottitle) {
 GOCCSplitPseudo <- function(dgeResults_annotated, database) {
     L_vs_PH <- PrepareComparison(
         dgeResults_annotated[[1]],
-        c("Upregulated in L vs PH", "Upregulated in PH vs L")
+        c("Upregulated in L vs PH", "Downregulated in L vs PH")
     )
     L_vs_CS <- PrepareComparison(
         dgeResults_annotated[[2]],
-        c("Upregulated in L vs CS", "Upregulated in CS vs L")
+        c("Upregulated in L vs CS", "Downregulated in L vs CS")
     )
     PH_vs_CS <- PrepareComparison(
         dgeResults_annotated[[3]],
-        c("Upregulated in CS vs PH", "Upregulated in PH vs CS")
+        c("Upregulated in CS vs PH", "Downregulated in CS vs PH")
     )
     All_comparisons <- c(L_vs_CS, L_vs_PH, PH_vs_CS)
 

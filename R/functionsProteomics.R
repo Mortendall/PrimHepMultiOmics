@@ -183,7 +183,7 @@ ProteomicsMDS <- function(normalized_proteomics_res, setup) {
 
   pBase <-
     ggplot2::ggplot(mdsData, ggplot2::aes(x = dim1, y = dim2, colour = Group)) +
-    ggplot2::geom_point(size = 10) +
+    ggplot2::geom_point(size = 8) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       axis.title.x = ggplot2::element_text(size = 18),
@@ -310,9 +310,9 @@ proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, cellheight){
     rownames(key) <- setup$SampleID
     key$Tissue <-factor(key$Tissue, c("liver", "CS", "PH"))
 
-    Heatmap_title <- grid::textGrob(heatmapname,
-                                    gp = grid::gpar(fontsize = 24,
-                                              fontface = "bold"))
+    # Heatmap_title <- grid::textGrob(heatmapname,
+    #                                 gp = grid::gpar(fontsize = 24,
+    #                                           fontface = "bold"))
     #create heatmap
     Heatmap <- pheatmap::pheatmap(trimmed_cpm,
                                   treeheight_col = 0,
@@ -325,17 +325,23 @@ proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, cellheight){
                                   cluster_cols = F,
                                   fontsize_row = 5,
                                   fontsize_col = 8,
-                                  cellwidth = 20,
+                                  cellwidth = 12,
                                   cellheight = cellheight,
                                   annotation_col = key,
                                   show_colnames = F,
                                   show_rownames = F,
-                                  cluster_rows = T
+                                  cluster_rows = T,
+                                  #main = heatmapname,
+                                  fontsize = 18
     )
-    Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
-                              Heatmap[[4]]),
-                 heights = c(0.1, 1))
-    Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
+    # Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
+    #                           Heatmap[[4]]),
+    #              heights = c(0.1, 1))
+    Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1, hjust = 0.1)
+    Heatmap <- Heatmap +
+        ggplot2::ggtitle(stringr::str_to_title(heatmapname))+
+        ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
+                                                          hjust = 0.5))
     return(Heatmap)
 
 }

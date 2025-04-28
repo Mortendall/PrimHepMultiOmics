@@ -8,6 +8,7 @@ library(targets)
 library(tidyverse)
 library(Seurat)
 library(SummarizedExperiment)
+library(org.Mm.eg.db)
 # library(tarchetypes) # Load other packages as needed. # nolint
 # Set target options:
 tar_option_set(
@@ -78,7 +79,7 @@ list(
   tar_target(
     name = CCDotplot,
     command = DotplotCC(GOCC,
-                        "GSE analysis - Upregulated and Downregulated\n RNAseq analysis")
+                        "GSE analysis - Upregulated and downregulated\n RNAseq analysis")
   ),
   tar_target(
     name = UpsetplotGO,
@@ -86,7 +87,15 @@ list(
   ),
   tar_target(
       name = HeatmapMitoRNA,
-      command= RNAHeatmap(GOCC,46,DGElist,filteredMetadata)
+      command= RNAHeatmap(GOCC,43,DGElist,filteredMetadata, 1.5)
+  ),
+  tar_target(
+      name = WriteDEGTable,
+      command = write_excel_file(DGETable, "SupportingFile1")
+  ),
+  tar_target(
+      name = WriteGOtable,
+      command = write_excel_file(GOCC@compareClusterResult, "SupportingFile2")
   ),
   tar_target(
     name = RawProteomics,
@@ -116,6 +125,10 @@ list(
     )
   ),
   tar_target(
+      name = DAPRexcel,
+      command = write_excel_file(DAPResults, "SupportingFile3")
+  ),
+  tar_target(
     name = MDSproteomics,
     command = ProteomicsMDS(
       NormalizedMatrix,
@@ -127,9 +140,14 @@ list(
     command = GOCCSplit(DAPResults)
   ),
   tar_target(
+      name = GOCCExcelProt,
+      command = write_excel_file(GOCCProteomics@compareClusterResult,
+                                 "SupportingFile4")
+  ),
+  tar_target(
     name = DotplotCCProteomics,
     command = DotplotCC(GOCCProteomics,
-                        "GSE analysis - upregulated and Downregulated")
+                        "GSE analysis - Upregulated and downregulated")
   ),
   tar_target(
     name = UpsetplotGOProteomics,
@@ -146,10 +164,10 @@ list(
   tar_target(
     name = HeatmapProteome,
     command = proteomicsHeatmap(GOCCProteomics,
-                                targetrow = 173,
+                                targetrow = 100,
                                 counts = NormalizedMatrix,
                                 ProteomicsSetup,
-                                2)
+                                2.2)
   ),
   tar_target(
     name = seuratObject,
@@ -168,6 +186,11 @@ list(
     command = DGEPseudo(pseudoDEseq)
   ),
   tar_target(
+      name = PseudoDEGExcel,
+      command = write_excel_file(PseudoDEG,
+                                 "SupportingFile5")
+  ),
+  tar_target(
     name = ProtRNACor,
     command = ProteinRNACorrelation(
       PseudoDEG,
@@ -179,10 +202,14 @@ list(
                             DAPResults)
   ),
   tar_target(
+      name = CorrelationGOCCExcel,
+      command = write_excel_file(CorrelationGOCC@compareClusterResult,
+                                 "SupportingFile7")
+  ),
+  tar_target(
         name = CorrelationFigure,
         command = ProteinRNACorFigure(
-            ProtRNACor,
-            CorrelationGOCC
+            ProtRNACor
             )
   ),
   tar_target(
@@ -199,12 +226,42 @@ list(
       command = GOCCSplitPseudo(PseudoDEG, "CC")
   ),
   tar_target(
+      name = GOCCPseudoExcel,
+      write_excel_file(GOCCPseudo@compareClusterResult,
+                       "SupportingFile6")
+  ),
+  tar_target(
       name = dotplotPseudo,
       command = DotplotCC(GOCCPseudo,
-                          "GSE analysis - upregulated and Downregulated")
+                          "GSE analysis - Upregulated and downregulated")
   ),
   tar_target(
       name = UpsetPseudo,
       command = UpsetplotGenerationPseudo(PseudoDEG,"Upset plot - Pseudobulk")
+  ),
+  #Add two more heatmaps to the pipeline
+  tar_target(
+      name = HeatmapECMRNA,
+      command = RNAHeatmap(GOCC,56, DGElist, filteredMetadata, 2)
+  ),
+  tar_target(
+      name = HeatmapRiboRNA,
+      command= RNAHeatmap(GOCC,102,DGElist,filteredMetadata, 1.75)
+  ),
+  tar_target(
+      name = HeatmapProteomeRibo,
+      command = proteomicsHeatmap(GOCCProteomics,
+                                  targetrow = 134,
+                                  counts = NormalizedMatrix,
+                                  ProteomicsSetup,
+                                  2.75)
+  ),
+  tar_target(
+      name = HeatmapProteomeECM,
+      command = proteomicsHeatmap(GOCCProteomics,
+                                  targetrow = 72,
+                                  counts = NormalizedMatrix,
+                                  ProteomicsSetup,
+                                  2.5)
   )
 )
