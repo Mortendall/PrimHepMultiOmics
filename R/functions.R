@@ -176,6 +176,8 @@ MDSanalysis <- function(RNAseq, metadata) {
     c("dim1", "dim2", "dim3", "ID", "Group")
   )
 
+  mdsData$Group <- factor(mdsData$Group, levels = c("L", "CS", "PH"))
+
   pBase <-
     ggplot2::ggplot(mdsData, ggplot2::aes(x = dim1, y = dim2, colour = Group)) +
     ggplot2::geom_point(size = 8) +
@@ -529,100 +531,85 @@ CPMPlotsProteomics <- function(normalized_proteomics_res) {
 #'
 #' @return
 
-RNAHeatmap <- function(GOobject,targetrow, DGElist, setup, cellheights){
+RNAHeatmap <- function(GOobject,targetrow, DGElist, setup, show_legend){
+
     #prepare setup file
     setup <-setup |>
-            dplyr::arrange(Group = base::factor(Group, c("L", "CS", "PH")))
-        #prepare CPM matrix from DEG list
-        counts <- edgeR::cpm(DGElist,log = T)
-        counts <- counts |>
-            as.data.frame() |>
-            dplyr::select(setup$Sample) |>
-            dplyr::arrange(dplyr::desc(rowSums(counts)))
-        counts <- counts |>
-            dplyr::mutate(ENSEMBL = rownames(counts))
+        dplyr::arrange(Group = base::factor(Group, c("L", "CS", "PH")))
+    #prepare CPM matrix from DEG list
+    counts <- edgeR::cpm(DGElist,log = T)
+    counts <- counts |>
+        as.data.frame() |>
+        dplyr::select(setup$Sample) |>
+        dplyr::arrange(dplyr::desc(rowSums(counts)))
+    counts <- counts |>
+        dplyr::mutate(ENSEMBL = rownames(counts))
 
-        #generate SYMBOL IDs for count matrix
-        keyID<- clusterProfiler::bitr(counts$ENSEMBL,
-                                    fromType = "ENSEMBL",
-                                    toType = "SYMBOL",
-                                    OrgDb = "org.Mm.eg.db",
-                                    drop = T)
-        keyID <- keyID |>
-            dplyr::distinct(ENSEMBL, .keep_all = T)
+    #generate SYMBOL IDs for count matrix
+    keyID<- clusterProfiler::bitr(counts$ENSEMBL,
+                                  fromType = "ENSEMBL",
+                                  toType = "SYMBOL",
+                                  OrgDb = "org.Mm.eg.db",
+                                  drop = T)
+    keyID <- keyID |>
+        dplyr::distinct(ENSEMBL, .keep_all = T)
 
-        counts <- dplyr::left_join(counts,keyID, by = c("ENSEMBL"="ENSEMBL"))
+    counts <- dplyr::left_join(counts,keyID, by = c("ENSEMBL"="ENSEMBL"))
 
-        #Generate Gene list
-        if(class(GOobject)=="compareClusterResult"){
-            gene_list <- GOobject@compareClusterResult$geneID[targetrow]
-            heatmapname <- GOobject@compareClusterResult$Description[targetrow]
-        }
-        else if(class(GOobject)=="enrichResult"){
-            gene_list <- GOobject@result$geneID[targetrow]
-            heatmapname <- GOobject@result$Description[targetrow]
-        }
-        else{
-            print("No GO object detected")
-        }
+    #Generate Gene list
+    if(class(GOobject)=="compareClusterResult"){
+        gene_list <- GOobject@compareClusterResult$geneID[targetrow]
+        heatmapname <- GOobject@compareClusterResult$Description[targetrow]
+    }
 
-        gene_list <- unlist(stringr::str_split(gene_list, "/"))
+    else if(class(GOobject)=="enrichResult"){
+        gene_list <- GOobject@result$geneID[targetrow]
+        heatmapname <- GOobject@result$Description[targetrow]
+    }
 
-        #Select Candidates in Gene List
-        trimmed_cpm <- counts|>
-            dplyr::select(-ENSEMBL) |>
-            dplyr::filter(SYMBOL %in% gene_list) |>
-            dplyr::distinct(SYMBOL, .keep_all = T) |>
-            dplyr::arrange(SYMBOL)
-        trimmed_cpm <- trimmed_cpm |>
-            dplyr::filter(!is.na(SYMBOL))
-        rownames(trimmed_cpm)<-trimmed_cpm$SYMBOL
-        trimmed_cpm <- trimmed_cpm |>
-            dplyr::select(-SYMBOL)
+    gene_list <- unlist(stringr::str_split(gene_list, "/"))
 
-        #create annotation key for heatmap
-        key <- as.data.frame(setup)
-        key <- key |>
-            dplyr::select(Group)
-        rownames(key) <- setup$Sample
-        key$Group <- factor(key$Group, c("L", "CS", "PH"))
+    #create annotation key for heatmap
+    key <- as.data.frame(setup)
+    key <- key |>
+        dplyr::select(Group, Sample) |>
+        dplyr::rename(ID = Sample)
+    key$Group <- factor(key$Group, c("L", "CS", "PH"))
 
-        #create heatmap
-        # Heatmap_title <- grid::textGrob(heatmapname,
-        #                                 gp = gpar(fontsize = 24,
-        #                                           fontface = "bold"))
-        Heatmap <- pheatmap::pheatmap(trimmed_cpm,
-                                      treeheight_col = 0,
-                                      treeheight_row = 0,
-                                      scale = "row",
-                                      legend = T,
-                                      na_col = "white",
-                                      Colv = NA,
-                                      na.rm = T,
-                                      cluster_cols = F,
-                                      fontsize_row = 5,
-                                      fontsize_col = 8,
-                                      cellwidth = 20,
-                                      cellheight = cellheights,
-                                      annotation_col = key,
-                                      show_colnames = F,
-                                      show_rownames = F,
-                                      cluster_rows = T
-        )
-        # Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
-        #                                                 Heatmap[[4]]),
-        #                                    heights = c(0.1, 1))
-        # Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
-        # Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1)
-        Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1, hjust = 0.1)
-        Heatmap <- Heatmap +
-            ggplot2::ggtitle(stringr::str_to_title(heatmapname))+
-            ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
-                                                              hjust = 0.5))
-        return(Heatmap)
+    trimmed_cpm <- counts|>
+        dplyr::select(-ENSEMBL) |>
+        dplyr::filter(SYMBOL %in% gene_list) |>
+        dplyr::distinct(SYMBOL, .keep_all = T) |>
+        dplyr::arrange(SYMBOL)
+    trimmed_cpm <- trimmed_cpm |>
+        dplyr::filter(!is.na(SYMBOL))
+
+    melted_counts <- tidyr::pivot_longer(trimmed_cpm, cols = 1:15, names_to = "ID", values_to = "logCPM")
+    melted_counts <- left_join(melted_counts, key)
+    melted_counts$ID <- factor(melted_counts$ID, levels = key$ID)
 
 
+    heatmap_result <- tidyHeatmap::heatmap(melted_counts,
+                                           .row = ID,
+                                           .column = SYMBOL,
+                                           .value = logCPM,
+                                           scale = "column",
+                                           column_dend_height = unit(0, "cm"),
+                                           cluster_rows = FALSE,
+                                           palette_value = circlize::colorRamp2(c(-2,-1,0,1,2), viridis::inferno(5)),
+                                           row_names_gp = ggfun::gpar(fontsize = 0),
+                                           column_title = heatmapname,
+                                           column_title_gp = ggfun::gpar(fontsize = 24),
+                                           show_row_names = F,
+                                           show_column_names = F,
+                                           show_heatmap_legend = show_legend,
+                                           row_title = NULL
+    ) |> tidyHeatmap::annotation_tile(Group,palette = c("red", "cyan", "orange"),
+                                      show_legend = show_legend,
+                                      show_title = FALSE,
+                                      annotation_name = NULL)
 
+    return(heatmap_result)
 }
 
 #' write_excel_sheet
@@ -636,3 +623,64 @@ write_excel_file <- function(input, filename){
     openxlsx::write.xlsx(x = input,
                          file = here::here(paste0("data/",filename,".xlsx")))
 }
+
+#' Volcano Plotter
+#'
+#' @param DEdata targets list object with DEdata
+#' @param datatype "RNA", "proteomics", or "pseudo"
+#'
+#' @return a list of volcano plots
+
+volcano_plotter <- function(DEdata, datatype){
+    volcano_plots <- vector(mode = "list",
+                            length = length(DEdata))
+
+    names(volcano_plots) <- names(DEdata)
+
+    if(datatype == "proteomics"){
+        DEdata <- purrr::map(DEdata,
+                             ~dplyr::rename(., FDR = adj.P.Val,
+                                            SYMBOL = Genes))
+    }
+    if(datatype=="pseudo"){
+        DEdata <- purrr::map(DEdata,
+                             ~dplyr::rename(., FDR = padj,
+                                            SYMBOL = gene,
+                                            logFC = log2FoldChange))
+    }
+
+
+
+    volcano_plots <- purrr::map(DEdata,
+                                ~ggplot2::ggplot(., ggplot2::aes(logFC, -log10(FDR)))+
+                                    ggplot2::geom_point(color = ifelse(.$FDR<0.05, "red", "black"))+
+                                    ggrepel::geom_label_repel(data = subset(dplyr::filter(.,!is.na(SYMBOL)) |>
+                                                                            dplyr::arrange(dplyr::desc(abs(logFC))) |>
+                                                                                dplyr::filter(dplyr::row_number()<21)),
+                                                              ggplot2::aes(x = logFC,
+                                                                           y = -log10(FDR),
+                                                                           label = SYMBOL),
+                                                              max.overlaps = 10)+
+                                    ggplot2::theme_bw()+
+                                    ggplot2::theme(
+                                        axis.title.x = ggplot2::element_text(size = 16),
+                                        axis.title.y = ggplot2::element_text(size = 16),
+                                        axis.text.x = ggplot2::element_text(size = 16),
+                                        axis.text.y = ggplot2::element_text(size = 16)
+                                    ))
+
+
+    plot_names <- purrr::map(names(volcano_plots),
+                              ~paste(., datatype, sep = " "))
+
+    volcano_plots <- purrr::map2(volcano_plots,
+                                 plot_names,
+                                 ~.x + ggplot2::ggtitle(.y)+
+                                     ggplot2::theme(
+                                         plot.title = ggplot2::element_text(size = 20, hjust = 0.5)))
+
+    return(volcano_plots)
+
+}
+
+

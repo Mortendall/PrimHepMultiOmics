@@ -87,7 +87,7 @@ list(
   ),
   tar_target(
       name = HeatmapMitoRNA,
-      command= RNAHeatmap(GOCC,43,DGElist,filteredMetadata, 1.5)
+      command= RNAHeatmap(GOCC,43,DGElist,filteredMetadata, T)
   ),
   tar_target(
       name = WriteDEGTable,
@@ -167,7 +167,7 @@ list(
                                 targetrow = 100,
                                 counts = NormalizedMatrix,
                                 ProteomicsSetup,
-                                2.2)
+                                T)
   ),
   tar_target(
     name = seuratObject,
@@ -242,11 +242,11 @@ list(
   #Add two more heatmaps to the pipeline
   tar_target(
       name = HeatmapECMRNA,
-      command = RNAHeatmap(GOCC,56, DGElist, filteredMetadata, 2)
+      command = RNAHeatmap(GOCC,56, DGElist, filteredMetadata, T)
   ),
   tar_target(
       name = HeatmapRiboRNA,
-      command= RNAHeatmap(GOCC,102,DGElist,filteredMetadata, 1.75)
+      command= RNAHeatmap(GOCC,102,DGElist,filteredMetadata, T)
   ),
   tar_target(
       name = HeatmapProteomeRibo,
@@ -254,7 +254,7 @@ list(
                                   targetrow = 134,
                                   counts = NormalizedMatrix,
                                   ProteomicsSetup,
-                                  2.75)
+                                  T)
   ),
   tar_target(
       name = HeatmapProteomeECM,
@@ -262,6 +262,66 @@ list(
                                   targetrow = 72,
                                   counts = NormalizedMatrix,
                                   ProteomicsSetup,
-                                  2.5)
+                                  T)
+  ),
+  tar_target(
+      name = VolcanoRNA,
+      command = volcano_plotter(DGETable, "RNA")
+  ),
+  tar_target(
+      name = VolcanoProtein,
+      command = volcano_plotter(DAPResults, "proteomics")
+  ),
+  tar_target(
+      name = VolcanoPseudo,
+      command = volcano_plotter(PseudoDEG, "pseudo")
+  ),
+  #make clustering
+  tar_target(
+      name = go_network_cc,
+      command = prepare_network()
+  ),
+  #cluster mRNA data
+  tar_target(
+      name = mRNA_GO_data,
+      command = prepare_data(GOCC)
+  ),
+  tar_target(
+      name = mRNA_subgraphs,
+      command = create_subgraphs(mRNA_GO_data, go_network_cc)
+  ),
+  tar_target(
+      name = cluster_mRNA,
+      command = cluster_go_terms(mRNA_subgraphs, go_network_cc, mRNA_GO_data, 0.6)
+  ),
+  tar_target(
+      name = mRNA_plot_prepare,
+      command = prepare_plot(cluster_mRNA,mRNA_subgraphs)
+  ),
+  tar_target(
+      name = mRNA_plots,
+      command = make_plots(cluster_mRNA, mRNA_plot_prepare)
+  ),
+  #cluster proteomics data
+  tar_target(
+      name = prot_GO_data,
+      command = prepare_data(GOCCProteomics)
+  ),
+  tar_target(
+      name = prot_subgraphs,
+      command = create_subgraphs(prot_GO_data, go_network_cc)
+  ),
+  tar_target(
+      name = cluster_prot,
+      command = cluster_go_terms(prot_subgraphs, go_network_cc, prot_GO_data, 0.6)
+  ),
+  tar_target(
+      name = prot_plot_prepare,
+      command = prepare_plot(cluster_prot,prot_subgraphs)
+  ),
+  tar_target(
+      name = prot_plots,
+      command = make_plots(cluster_prot, prot_plot_prepare)
   )
 )
+

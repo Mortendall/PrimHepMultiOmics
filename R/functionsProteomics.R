@@ -181,6 +181,8 @@ ProteomicsMDS <- function(normalized_proteomics_res, setup) {
     c("dim1", "dim2", "dim3", "ID", "Group")
   )
 
+  mdsData$Group <- factor(mdsData$Group, levels = c("liver", "CS", "PH"))
+
   pBase <-
     ggplot2::ggplot(mdsData, ggplot2::aes(x = dim1, y = dim2, colour = Group)) +
     ggplot2::geom_point(size = 8) +
@@ -259,7 +261,7 @@ UpsetProteomics <- function(limma_data) {
   return(upsetProt)
 }
 
-proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, cellheight){
+proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, show_legend){
     #load setup data
     setup <-setup |>
         dplyr::arrange(Tissue = base::factor(Tissue, c("liver", "CS", "PH")))
@@ -298,51 +300,51 @@ proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, cellheight){
         dplyr::filter(SYMBOL %in% gene_list) |>
         dplyr::distinct(SYMBOL, .keep_all = T)
     trimmed_cpm <- trimmed_cpm |>
-        dplyr::filter(!is.na(SYMBOL))
-    rownames(trimmed_cpm)<-trimmed_cpm$SYMBOL
-    trimmed_cpm <- trimmed_cpm |>
-        dplyr::select(-SYMBOL, -ID)
+        dplyr::filter(!is.na(SYMBOL))|>
+        dplyr::select(-ID)
 
     #create annotation key for heatmap
     key <- as.data.frame(setup)
     key <- key |>
-        dplyr::select(Tissue)
-    rownames(key) <- setup$SampleID
+        dplyr::select(Tissue, SampleID)
     key$Tissue <-factor(key$Tissue, c("liver", "CS", "PH"))
+
+    melted_counts <- tidyr::pivot_longer(trimmed_cpm, cols = 1:24, names_to = "SampleID", values_to = "logAbundance")
+    melted_counts <- left_join(melted_counts, key)
+    melted_counts$SampleID <- factor(melted_counts$SampleID, levels = key$SampleID)
+
+
+    heatmap_result <- tidyHeatmap::heatmap(melted_counts,
+                                           .row = SampleID,
+                                           .column = SYMBOL,
+                                           .value = logAbundance,
+                                           scale = "column",
+                                           column_dend_height = unit(0, "cm"),
+                                           cluster_rows = FALSE,
+                                           palette_value = circlize::colorRamp2(c(-3,-2,-1,0,1,2,3), viridis::inferno(7)),
+                                           row_names_gp = ggfun::gpar(fontsize = 0),
+                                           column_title = heatmapname,
+                                           column_title_gp = ggfun::gpar(fontsize = 24),
+                                           show_row_names = F,
+                                           show_column_names = F,
+                                           show_heatmap_legend = show_legend,
+                                           row_title = NULL
+    ) |> tidyHeatmap::annotation_tile(Tissue,palette = c("red", "cyan", "orange"),
+                                      show_legend = show_legend,
+                                      show_title = FALSE,
+                                      annotation_name = NULL)
 
     # Heatmap_title <- grid::textGrob(heatmapname,
     #                                 gp = grid::gpar(fontsize = 24,
     #                                           fontface = "bold"))
     #create heatmap
-    Heatmap <- pheatmap::pheatmap(trimmed_cpm,
-                                  treeheight_col = 0,
-                                  treeheight_row = 0,
-                                  scale = "row",
-                                  legend = T,
-                                  na_col = "white",
-                                  Colv = NA,
-                                  na.rm = T,
-                                  cluster_cols = F,
-                                  fontsize_row = 5,
-                                  fontsize_col = 8,
-                                  cellwidth = 12,
-                                  cellheight = cellheight,
-                                  annotation_col = key,
-                                  show_colnames = F,
-                                  show_rownames = F,
-                                  cluster_rows = T,
-                                  #main = heatmapname,
-                                  fontsize = 18
-    )
+
+
     # Heatmap <- gridExtra::grid.arrange(grobs = list(Heatmap_title,
     #                           Heatmap[[4]]),
     #              heights = c(0.1, 1))
-    Heatmap <- ggplotify::as.ggplot(Heatmap, scale = 1, hjust = 0.1)
-    Heatmap <- Heatmap +
-        ggplot2::ggtitle(stringr::str_to_title(heatmapname))+
-        ggplot2::theme(plot.title = ggplot2::element_text(size = 24,
-                                                          hjust = 0.5))
-    return(Heatmap)
+
+    return(heatmap_result)
 
 }
 

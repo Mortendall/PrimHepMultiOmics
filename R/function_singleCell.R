@@ -326,8 +326,23 @@ ProteinRNACorFigure <- function(ProteinRNAComparison){
                                     levels = c("Other",
                                                "Mitochondrial inner membrane",
                                                "Ribonucleoprotein complex",
-                                               "Extracellular matrix")), ncol = 1)
-
+                                               "Extracellular matrix")), ncol = 1)+
+        ggplot2::annotate(geom = "text",
+                          x = -6,
+                          y = 3,
+                          label = 1)+
+        ggplot2::annotate(geom = "text",
+                          x = 6,
+                          y = 3,
+                          label = 2)+
+        ggplot2::annotate(geom = "text",
+                          x = 6,
+                          y = -4,
+                          label = 3)+
+        ggplot2::annotate(geom = "text",
+                          x = -6,
+                          y = -4,
+                          label = 4)
     return(ComparisonPlot)
 }
 
@@ -369,18 +384,19 @@ GOCCRNAProt <- function(ProtRNAComparison, limma_data){
                                 OrgDb = "org.Mm.eg.db"
     )
 
-    sub_group_comparison <- list(Up_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
+    sub_group_comparison <- list(Up_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
+                                                                  log2FoldChange < 0 &
+                                                                      logFC > 0),
+                                 Up_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
                                                                 log2FoldChange > 0 &
                                                                     logFC > 0),
-                                 Down_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
-                                                                    log2FoldChange < 0 &
-                                                                        logFC < 0),
                                  Down_Prot_Up_RNA = dplyr::filter(ProtRNAComparison,
                                                                   log2FoldChange > 0 &
                                                                       logFC < 0),
-                                 Up_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
-                                                                  log2FoldChange < 0 &
-                                                                      logFC > 0))
+                                 Down_Prot_Down_RNA = dplyr::filter(ProtRNAComparison,
+                                                                    log2FoldChange < 0 &
+                                                                        logFC < 0)
+                                 )
 
     entrez_list <- lapply(sub_group_comparison,
                           function(x) clusterProfiler::bitr(x$gene,
@@ -388,10 +404,11 @@ GOCCRNAProt <- function(ProtRNAComparison, limma_data){
                                                             toType = "ENTREZID",
                                                             OrgDb = "org.Mm.eg.db") |>
                               dplyr::pull(ENTREZID))
-    names(entrez_list)<- c("PH down Prot + RNA",
-                           "PH up Prot + RNA",
-                           "PH up Prot down RNA",
-                           "PH down Prot up RNA")
+    names(entrez_list)<- c("1. Inc. Protein, Dec. RNA",
+                           "2. Inc. Prot + RNA",
+                           "3. Dec. Prot, Inc. RNA",
+                           "4. Dec. Prot + RNA"
+                           )
     GO_results <- clusterProfiler::compareCluster(entrez_list,
                                                   fun = clusterProfiler::enrichGO,
                                                   keyType = "ENTREZID",
