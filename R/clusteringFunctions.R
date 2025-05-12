@@ -90,8 +90,17 @@ cluster_go_terms <- function(ontoNetSubgraph, graphNet, significant_go_terms, re
                                   yTerm <- igraph::V(graphNet)$ontoTerm[match(y[which.max(yMax)],
                                                                               igraph::V(graphNet)$name)]
 
-
-                                  return(yTerm)
+                                  #for cellular component,"cellular anatomical entity" and "protein-containing complex" are too general
+                                  #they are removed
+                                  if(any(yTerm == "cellular anatomical entity"| yTerm == "protein-containing complex")){
+                                      yMax <- yMax[-which.max(yMax)]
+                                      yTerm <- igraph::V(graphNet)$ontoTerm[match(y[which.max(yMax)],
+                                                                                 igraph::V(graphNet)$name)]
+                                      return(yTerm)
+                                  }
+                                  else{
+                                      return(yTerm)
+                                  }
 
                               }))
 
