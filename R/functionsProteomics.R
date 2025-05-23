@@ -261,6 +261,16 @@ UpsetProteomics <- function(limma_data) {
   return(upsetProt)
 }
 
+#' Proteomics heatmap generator
+#'
+#' @param GOobject an enrichGO object
+#' @param targetrow target row to be plotted
+#' @param counts matrix with counts
+#' @param setup setup data frame
+#' @param show_legend show legend in plot (bolean)
+#'
+#' @return a tidy heatmap
+
 proteomicsHeatmap <- function(GOobject,targetrow, counts, setup, show_legend){
     #load setup data
     setup <-setup |>

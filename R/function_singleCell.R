@@ -314,14 +314,21 @@ ProteinRNACorFigure <- function(ProteinRNAComparison){
         ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5,
                                                           size = 24),
                        plot.subtitle = ggplot2::element_text(hjust = 0.5,
-                                                             size = 22),
+                                                             size = 20),
+                       strip.text =  ggplot2::element_text(hjust = 0.5,
+                                                             size = 20),
                        axis.title = ggplot2::element_text(size = 16),
                        axis.text = ggplot2::element_text(size = 20),
-                       legend.text = ggplot2::element_text(size = 16))+
-        ggplot2::scale_color_manual(values = viridis::turbo(4))+
+                       #legend.text = ggplot2::element_text(size = 20),
+                       legend.position = "none")+
+        ggplot2::scale_color_manual(values = viridis::turbo(4),
+                                    breaks = c("Other",
+                                               "Mitochondrial inner membrane",
+                                               "Ribonucleoprotein complex",
+                                               "Extracellular matrix"))+
         ggplot2::geom_hline(yintercept = 0, linetype = "dashed")+
         ggplot2::geom_vline(xintercept = 0, linetype = "dashed")+
-        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 5)))+
+        #ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 5)))+
         ggplot2::facet_wrap(~factor(GOaffiliation,
                                     levels = c("Other",
                                                "Mitochondrial inner membrane",

@@ -1,3 +1,11 @@
+library(tidyverse)
+library(Seurat)
+library(SummarizedExperiment)
+source("~/R/tmp/PrimHepMultiOmics/R/functions.R")
+source("~/R/tmp/PrimHepMultiOmics/R/functionsProteomics.R")
+source("~/R/tmp/PrimHepMultiOmics/R/function_singleCell.R")
+options(ggrepel.max.overlaps = Inf)
+
 #####Figure 1####
 pcaplotRNA <- targets::tar_read(MDSplot)
 upsetRNA <- targets::tar_read(upsetplot)
@@ -19,30 +27,32 @@ setup_figure <- grid::rasterGrob(grDevices::as.raster(setup_figure),interpolate 
 
 #decided to remove cpm-figs from main text as they were mainly for internal QC
 
-# design_layout1 <- "
-# 112333
-# 112333
-# 444555
-# 444555
-# 667788
-# 667788
-# 66##88
-# 66####
-# "
+
  design_layout1 <- "
- 112333
- 112333
- 444555
- 444555
- 666666
- 777777
- 888888
- ######
+ 111122233333
+ 111122233333
+ 444444555555
+ 444444555555
+ 666666666666
+ 777777777777
+ 888888888888
+ ############
  "
 
+ # design_layout1 <- "
+ # 112333
+ # 112333
+ # 444555
+ # 444555
+ # 666666
+ # 777777
+ # 888888
+ # ######
+ # "
+
 patchworktest <- patchwork::free(patchwork::wrap_elements(setup_figure))+
-    pcaplotRNA +
-    upsetRNA +
+    patchwork::free(pcaplotRNA) +
+    patchwork::free(upsetRNA) +
     #cpm_figs +
     upsetGO+
     CompareClusterFigure_All+
@@ -80,18 +90,18 @@ setup_figure_2 <- grid::rasterGrob(grDevices::as.raster(setup_figure_2),interpol
 #decided to remove cpm-figs from main text as they were mainly for internal QC
 
 design_layout2 <- "
- 112333
- 112333
- 444555
- 444555
- 666666
- 777777
- 888888
- ######
+ 111122233333
+ 111122233333
+ 444444555555
+ 444444555555
+ 666666666666
+ 777777777777
+ 888888888888
+ ############
  "
 patchworktest2 <- patchwork::free(patchwork::wrap_elements(setup_figure_2))+
-    pcaplotProt +
-    upsetProt +
+    patchwork::free(pcaplotProt) +
+    patchwork::free(upsetProt) +
     #cpm_figsProt +
     upsetGOProt+
     CompareClusterFigure_All_Prot+
@@ -122,13 +132,13 @@ setup_figure_3 <- grid::rasterGrob(grDevices::as.raster(setup_figure_3),interpol
 
 
 design_layout3 <- "
-112233
-112233
-444555
-444555
-666555
-666555
-"
+ 111122233333
+ 111122233333
+ 444444555555
+ 444444555555
+ 666666555555
+ 666666555555
+ "
 
 patchworktest3 <- patchwork::free(patchwork::wrap_elements(setup_figure_3))+
     (mdsPseudo+ggplot2::theme(
@@ -137,8 +147,10 @@ patchworktest3 <- patchwork::free(patchwork::wrap_elements(setup_figure_3))+
      )+
     patchwork::free(UpsetPseudo)+
     GOPseudo+
-    (LogFCCompare+ggplot2::theme(axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 0, unit = "pt")),
-                                 axis.title.x = ggplot2::element_text(vjust = 5)))+
+    #(
+        patchwork::free(LogFCCompare)+
+         #ggplot2::theme(axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 0, unit = "pt")),
+         #                        axis.title.x = ggplot2::element_text(vjust = 5)))+
     GOcor+
     patchwork::plot_layout(design = design_layout3)+
     patchwork::plot_annotation(tag_levels = "A")&
@@ -286,7 +298,7 @@ patchworktest3 <- patchworktest3 + patchwork::plot_annotation(title = "Figure 3"
         patchwork::plot_annotation(tag_levels = "A")&
         ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
-    patchworktest9 <- patchworktest9 + patchwork::plot_annotation(title = "Supporting Fig. 2",
+    patchworktest9 <- patchworktest9 + patchwork::plot_annotation(title = "Supporting Fig. 3",
                                                                   theme = theme(plot.title = ggplot2::element_text(size = 26)))
 
     grDevices::pdf(here::here("data/SupportingFig3.pdf"), height = 20, width = 20)
@@ -317,7 +329,7 @@ design_supplemental4 <- "
         ggplot2::theme(plot.tag = ggplot2::element_text(size = 20))
 
     patchwork_figure_sup4 <- patchwork_figure_sup4+
-        patchwork::plot_annotation(title = "Supporting Figure 4",
+        patchwork::plot_annotation(title = "Supporting Figure 6",
                                    theme = ggplot2::theme(plot.title = ggplot2::element_text(size = 26)))
 
     grDevices::pdf(here::here("data/SupportingFig6.pdf"), height = 20, width = 20)
@@ -332,38 +344,33 @@ design_supplemental4 <- "
 #figure 4-9 are generated in separate script. Code is available in
 #here::here("doc/SingleCellFigures.R")
 
-#####Patch figures together####
-qpdf::pdf_combine(input = c(here::here("data/Figure1.pdf"),
-                            here::here("data/Figure2.pdf"),
-                            here::here("data/Figure3.pdf"),
-                            here::here("data/Figure4.pdf"),
-                            here::here("data/Figure5.pdf"),
-                            here::here("data/Figure6.pdf"),
-                            here::here("data/Figure7.pdf"),
-                            here::here("data/Figure8.pdf"),
-                            here::here("data/SupportingFig1.pdf"),
-                            here::here("doc/hepamorphosis_fig.pdf")),
-                  output = here::here("data/Figures.pdf"))
+
 
 #combined file is too large. Make two files instead
 
 qpdf::pdf_combine(input = c(here::here("data/Figure5.pdf"),
                             here::here("data/Figure6.pdf"),
-                            here::here("data/Figure7.pdf"),
-                            here::here("data/SupportingFig1.pdf"),
-                            here::here("data/SupportingFig2.pdf"),
-                            here::here("data/SupportingFig3.pdf"),
-                            here::here("data/SupportingFig4.pdf"),
-                            here::here("data/SupportingFig5.pdf"),
-                            here::here("data/SupportingFig6.pdf")),
-                  output = here::here("data/Figures5_sup.pdf"))
+                            here::here("data/Figure7.pdf")),
+                            output = here::here("data/Figures5_7.pdf"))
+
+
 qpdf::pdf_combine(input = c(here::here("data/Figure1.pdf"),
                             here::here("data/Figure2.pdf"),
                             here::here("data/Figure3.pdf"),
                             here::here("data/Figure4.pdf")),
                   output = here::here("data/Figures1_4.pdf"))
 
-#calculate how many proteins were identified pr. sample type
+qpdf::pdf_combine(input = c(here::here("data/SupportingFig1.pdf"),
+                            here::here("data/SupportingFig2.pdf"),
+                            here::here("data/SupportingFig3.pdf"),
+                            here::here("data/SupportingFig4.pdf"),
+                            here::here("data/SupportingFig5.pdf"),
+                            here::here("data/SupportingFig6.pdf"),
+                            here::here("data/SupportingFigure7.pdf"),
+                            here::here("data/250523 Supporting Figure legends.pdf")),
+                  output = here::here("data/SupFigures.pdf"))
+
+#calculate how many proteins were identified pr. sample type for paper
 
 proteomicsdata<- targets::tar_read(RawProteomics)
 liver <- proteomicsdata[1:8] |>

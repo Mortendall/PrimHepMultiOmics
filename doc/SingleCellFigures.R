@@ -128,7 +128,7 @@ Cyp2e1Plot <- Seurat::FeaturePlot(SingleCellData,
     ggplot2::ggtitle("Cyp2e1 - Central Marker")+
     ggplot2::theme(plot.title = ggplot2::element_text(size = 22))
 
-Cyp2f2Plot <- Seurat::FeaturePlot(SingleCellData,
+HalPlot <- Seurat::FeaturePlot(SingleCellData,
                                   features = "Hal",
                                   pt.size = 1)+
     ggplot2::ggtitle("Hal - Portal Marker")+
@@ -150,7 +150,7 @@ patchworktest4 <- DimPlotGroup+
     DimPlotCellType+
     DotplotFigure+
     Cyp2e1Plot+
-    Cyp2f2Plot+
+    HalPlot+
     patchwork::plot_layout(design = design_layout4)+
     patchwork::plot_annotation(tag_levels = "A")&
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20,
@@ -212,7 +212,7 @@ SeuratHepatocytes <- RenameIdents(SeuratHepatocytes,
                             "L7" = "L",
                             "L8" = "L",
                             "CS1" = "CS",
-                            "CS2" = "CS",
+                            "CD2" = "CS",
                             "CS3" = "CS",
                             "CS4" = "CS",
                             "CS5" = "CS",
@@ -329,7 +329,7 @@ DimPlotIndividual_L1 <- Seurat::DimPlot(SingleCellData,
     )
 DimPlotIndividual_L1
 
-patchwork_sup2 <- DimPlotIndividual_L1+ patchwork::plot_annotation(title = "Supporting Fig. 2",
+patchwork_sup2 <- DimPlotIndividual_L1+ patchwork::plot_annotation(title = "Supporting Fig. 4",
                                                               theme = theme(plot.title = ggplot2::element_text(size = 26)))
 
 grDevices::pdf(here::here("data/SupportingFig4.pdf"), height = 20, width = 20)
@@ -355,7 +355,7 @@ patchworktest5 <-
     ggplot2::theme(plot.tag = ggplot2::element_text(size = 20,
                                                     face = "plain"))
 
-patchworktest5 <- patchworktest5 + patchwork::plot_annotation(title = "Supporting Fig. 3",
+patchworktest5 <- patchworktest5 + patchwork::plot_annotation(title = "Supporting Fig. 5",
                                                                                theme = theme(plot.title = ggplot2::element_text(size = 26)))
 
     grDevices::pdf(here::here("data/SupportingFig5.pdf"), height = 20, width = 20)
@@ -363,6 +363,8 @@ patchworktest5 <- patchworktest5 + patchwork::plot_annotation(title = "Supportin
      dev.off()
 
 #####PseudoDEG on hepatocytes####
+     #ID needs to match metadata so remake
+SeuratHepatocytes <- readRDS(here::here("data/HepatocytesSubset.rds"))
 PseudoHepatocytes <- Pseudobulk(SeuratHepatocytes)
 DEGHepatocytes <-DGEPseudo(PseudoHepatocytes)
 
@@ -469,7 +471,7 @@ DimplotClusterPH <- Seurat::DimPlot(SeuratPH,
                                                                            name = "Darjeeling1",
                                                                            type = "continuous"),
                                            label.box = T) +
-    ggplot2::ggtitle("DimPlot by cluster \n for PH samples") +
+    ggplot2::ggtitle("DimPlot by cluster \n for Primary Hepatocyte Samples") +
     ggplot2::theme(
         plot.title = ggplot2::element_text(hjust = 0.5,
                                            size = 24),
@@ -479,26 +481,26 @@ DimplotClusterPH <- Seurat::DimPlot(SeuratPH,
 #assign cell identities based on marker gene expression
 Seurat::Idents(SeuratPH)<- "seurat_clusters"
 SeuratPH <- RenameIdents(SeuratPH,
-                            "0" = "Dedifferentiated \nHepatocytes",
-                            "1" = "Dedifferentiated \nHepatocytes",
-                            "2" = "Dedifferentiated \nHepatocytes",
-                            "3" = "Dedifferentiated \nHepatocytes",
-                            "4" = "Dedifferentiated \nHepatocytes",
-                            "5" = "Dedifferentiated \nHepatocytes",
-                            "6" = "Dedifferentiated \nEndothelial Cells",
-                            "7" = "Dedifferentiated \nHepatocytes",
-                            "8" = "Dedifferentiated \nHepatocytes",
-                            "9" = "Dedifferentiated \nHepatocytes",
-                            "10" = "Dedifferentiated \nHepatocytes",
-                            "11" = "Dedifferentiated \nHepatocytes",
-                            "12" = "Dedifferentiated \nHepatocytes",
-                            "13" = "Dedifferentiated \nHepatocytes",
-                            "14" = "Dedifferentiated \nHepatocytes",
-                            "15" = "Dedifferentiated \nHepatocytes",
-                            "16" = "Dedifferentiated \nHepatocytes",
+                            "0" = "Dedif. \nHepatocytes",
+                            "1" = "Dedif. \nHepatocytes",
+                            "2" = "Dedif. \nHepatocytes",
+                            "3" = "Dedif. \nHepatocytes",
+                            "4" = "Dedif. \nHepatocytes",
+                            "5" = "Dedif. \nHepatocytes",
+                            "6" = "Dedif. \nEndothelial Cells",
+                            "7" = "Dedif. \nHepatocytes",
+                            "8" = "Dedif. \nHepatocytes",
+                            "9" = "Dedif. \nHepatocytes",
+                            "10" = "Dedif. \nHepatocytes",
+                            "11" = "Dedif. \nHepatocytes",
+                            "12" = "Dedif. \nHepatocytes",
+                            "13" = "Dedif. \nHepatocytes",
+                            "14" = "Dedif. \nHepatocytes",
+                            "15" = "Dedif. \nHepatocytes",
+                            "16" = "Dedif. \nHepatocytes",
                             "17" = "Stellate Cells",
-                            "18" = "Dedifferentiated \nHepatocytes",
-                            "19" = "Dedifferentiated \nHepatocytes",
+                            "18" = "Dedif. \nHepatocytes",
+                            "19" = "Dedif. \nHepatocytes",
                             "20" = "Endothelial Cells",
                             "21" = "Hepatocytes"
 )
@@ -519,7 +521,7 @@ marker_genes <- c("Alb",
                   "Gstp2")
 DotplotFigurePH <- Seurat::DotPlot(SeuratPH,
                                  features = marker_genes)+
-    ggplot2::ggtitle("Marker Genes - PH subset")+
+    ggplot2::ggtitle("Marker Genes - Primary Hepatocyte subset")+
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
                                                        vjust = 0.8,
                                                        size = 14),
@@ -539,7 +541,7 @@ DimplotIndividualPH <- Seurat::DimPlot(SeuratPH,
                                                 name = "Zissou1",
                                                 type = "continuous"),
                 label.box = T) +
-    ggplot2::ggtitle("DimPlot By individual \ for PH") +
+    ggplot2::ggtitle("DimPlot By individual \ for Primary Hepatocytes") +
     ggplot2::theme(
         plot.title = ggplot2::element_text(hjust = 0.5,
                                            size = 24),
@@ -550,11 +552,13 @@ Idents(SeuratPH) <- "celltype"
 DimplotCelltypePH <- Seurat::DimPlot(SeuratPH,
                                   pt.size = 0.7,
                                   label = T,
-                                  label.size = 6,
+                                  label.size = 4,
                                   repel = T,
-                                  cols = wesanderson::wes_palette("Darjeeling1"),
-                                  label.box = T) +
-    ggplot2::ggtitle("DimPlot By cell type \n for PH") +
+                                  cols = wesanderson::wes_palette("Darjeeling1")
+                                  ,
+                                  label.box = T
+                                  ) +
+    ggplot2::ggtitle("DimPlot By cell type \n for Primary Hepatocytes") +
     ggplot2::theme(
         plot.title = ggplot2::element_text(hjust = 0.5,
                                            size = 24),
@@ -636,27 +640,27 @@ DotplotFigureEndo <- Seurat::DotPlot(SeuratEndothelial,
                    axis.title = ggplot2::element_blank())
 
 
-#Annotate dedifferentiated epithelial cell cluster
+#Annotate Dedif. epithelial cell cluster
 Seurat::Idents(SingleCellData)<-"seurat_clusters"
 SingleCellData <- RenameIdents(SingleCellData,
-                            "0" = "Dedifferentiated Hepatocyte",
-                            "1" = "Dedifferentiated Hepatocyte",
+                            "0" = "Dedif. Hepatocyte",
+                            "1" = "Dedif. Hepatocyte",
                             "2" = "Hepatocytes",
                             "3" = "Endothelial Cells",
                             "4" = "Hepatocytes",
                             "5" = "Hepatocytes",
                             "6" = "Hepatocytes",
                             "7" = "Hepatocytes",
-                            "8" = "Dedifferentiated Hepatocyte",
+                            "8" = "Dedif. Hepatocyte",
                             "9" = "Hepatocytes",
                             "10" = "Hepatocytes",
                             "11" = "Hepatocytes",
-                            "12" = "Dedifferentiated Endothelial Cells",
+                            "12" = "Dedif. Endothelial Cells",
                             "13" = "Hepatocytes",
-                            "14" = "Dedifferentiated Hepatocyte",
+                            "14" = "Dedif. Hepatocyte",
                             "15" = "Hepatocytes",
                             "16" = "Kupfer Cells",
-                            "17" = "Dedifferentiated Hepatocyte",
+                            "17" = "Dedif. Hepatocyte",
                             "18" = "Hepatocytes",
                             "19" = "Hepatocytes",
                             "20" = "Stellate Cells",
@@ -928,6 +932,35 @@ patchworktest8 <- patchworktest8 + patchwork::plot_annotation(title = "Figure 7"
       dev.off()
 
 
+#####Supplemental Figure 7####
+      SingleCellData <- targets::tar_read(seuratObject)
+      Markers <- readRDS(here::here("data/markersUpdated.rds"))
+
+      #####Dotplot for cell markers####
+      Seurat::Idents(SingleCellData)<- "celltype"
+      GOCC <- targets::tar_read(GOCC)
+      ECM_markers <- GOCC@compareClusterResult |>
+          dplyr::filter(Description == "extracellular matrix"&
+                            Cluster == "Upregulated in L vs CS") |>
+          dplyr::pull(geneID) |>
+          stringr::str_split(pattern = "/") |>
+          unlist()
 
 
+      DotplotFigureSup <- Seurat::DotPlot(SingleCellData,
+                                       features = ECM_markers)+
+          ggplot2::ggtitle("ECM genes upregulated \n in Liver vs Cell Suspension")+
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45,
+                                                             vjust = 0.8,
+                                                             size = 18),
+                         axis.text.y = ggplot2::element_text(size = 10),
+                         plot.title = ggplot2::element_text(hjust = 0.5,
+                                                            size = 24))+
+          ggplot2::coord_flip()
+
+      patchworktestsup7 <- DotplotFigureSup + patchwork::plot_annotation(title = "Supporting Figure 7",
+                                                                    theme = ggplot2::theme(plot.title = ggplot2::element_text(size = 26)))
+      grDevices::pdf(here::here("data/SupportingFigure7.pdf"), height = 20, width = 10)
+      patchworktestsup7
+      dev.off()
 

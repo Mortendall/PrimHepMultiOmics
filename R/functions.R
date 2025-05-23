@@ -188,7 +188,7 @@ MDSanalysis <- function(RNAseq, metadata) {
       legend.text = ggplot2::element_text(size = 18),
       plot.title = ggplot2::element_text(size = 22, hjust = 0.5)
     ) +
-    ggplot2::ggtitle("\n MDS Plot - RNAseq analysis") +
+    ggplot2::ggtitle("MDS Plot - RNAseq analysis") +
     ggplot2::xlab(paste("Dim1 (", round(100 * varianceExplained[1], 2), " %)", sep = "")) +
     ggplot2::ylab(paste("Dim2 (", round(100 * varianceExplained[2], 2), " %)", sep = ""))
   return(pBase)
@@ -259,15 +259,13 @@ UpsetplotGeneration <- function(dgeResults_annotated) {
     ))
   )
   # ggplotify to use the object in patchwork
-  upsetRNA <- ggplotify::as.ggplot(upsetRNA,scale = 1.1)
-  upsetRNA <- upsetRNA +
-     ggplot2::ggtitle("No. of differentially expressed genes between groups") +
+
+  upsetRNA <- ggplotify::as.ggplot(upsetRNA)+
+     ggplot2::ggtitle("Upsetplot - RNA") +
     ggplot2::theme(plot.title = ggplot2::element_text(
-      size = 22,
-      hjust = 0.5,
-      vjust = 1.50
+      size = 24,
+      hjust = 0.5
     ))
-  upsetRNA <- ggplotify::as.ggplot(upsetRNA,vjust = 0.1)
   return(upsetRNA)
 }
 
@@ -635,7 +633,17 @@ volcano_plotter <- function(DEdata, datatype){
     volcano_plots <- vector(mode = "list",
                             length = length(DEdata))
 
-    names(volcano_plots) <- names(DEdata)
+   name_vector  <- tibble(volcano_names = names(DEdata))
+    name_vector<- name_vector |>
+        dplyr::mutate(volcano_names =
+                          dplyr::case_when(
+                              volcano_names=="L_vs_CS"|volcano_names=="Liv_vs_CS"~"Liver vs Cell Suspension",
+                              volcano_names=="L_vs_PH"|volcano_names=="Liv_vs_PH"~"Liver vs Primary Hepatocytes",
+                              volcano_names=="CS_vs_PH"~"Cell Suspension vs Primary Hepatocytes",
+        .default = volcano_names
+    ))
+
+
 
     if(datatype == "proteomics"){
         DEdata <- purrr::map(DEdata,
@@ -669,9 +677,9 @@ volcano_plotter <- function(DEdata, datatype){
                                         axis.text.y = ggplot2::element_text(size = 16)
                                     ))
 
-
+    names(volcano_plots) <- name_vector$volcano_names
     plot_names <- purrr::map(names(volcano_plots),
-                              ~paste(., datatype, sep = " "))
+                              ~paste(.,"\n", datatype, sep = ""))
 
     volcano_plots <- purrr::map2(volcano_plots,
                                  plot_names,
