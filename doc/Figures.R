@@ -385,3 +385,10 @@ ph<- proteomicsdata[17:24]|>
     dplyr::rowwise() |>
     dplyr::summarise(rowsum = sum(dplyr::c_across(dplyr::everything()), na.rm = T)) |>
     dplyr::filter(rowsum!=0)
+
+
+#####Publication licenses for biorender####
+biorender_list <- fs::dir_ls(here::here("data/Publication LIcenses/"),regexp = "\\.pdf$"
+                                )
+qpdf::pdf_combine(input = biorender_list,
+                  output = here::here("data/Publicenses.pdf"))
